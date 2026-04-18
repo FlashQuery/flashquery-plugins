@@ -1,0 +1,15 @@
+{
+  "name": "crm",
+  "version": "1.5.0",
+  "description": "A CRM powered by FlashQuery Core \u2014 contact management through conversation, not application.",
+  "author": {
+    "name": "FlashQuery",
+    "email": "matt@flashquery.ai"
+  },
+  "keywords": [
+    "crm",
+    "flashquery",
+    "contacts",
+    "relationships"
+  ]
+}
