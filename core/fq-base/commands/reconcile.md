@@ -31,15 +31,15 @@ Report clearly:
 
 If nothing needed fixing: "Reconciliation complete — {n} documents checked. Everything is in sync."
 
-## Key distinction from /fqc-base:vault-scan
+## Key distinction from /fq-base:vault-scan
 
-| | /fqc-base:vault-scan | /fqc-base:reconcile |
+| | /fq-base:vault-scan | /fq-base:reconcile |
 |---|---|---|
 | Direction | Filesystem → Database | Database → Filesystem |
 | Missing status | Marks as `missing` (soft) | Promotes to `archived` (permanent) |
 | Use when | You added files to the vault | You moved/deleted files from the vault |
 
-If the user is unsure which to run, suggest `/fqc-base:vault-health` — it runs both in sequence.
+If the user is unsure which to run, suggest `/fq-base:vault-health` — it runs both in sequence.
 
 ## Performance note
 

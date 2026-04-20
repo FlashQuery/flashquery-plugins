@@ -92,4 +92,4 @@ get_doc_outline(identifiers: ["path1.md", "path2.md", "path3.md"])
 
 ## When search returns unexpectedly empty
 
-If the user just added or moved files outside the chat and search returns nothing you'd expect to see, the scanner may not have picked them up yet. Run `force_file_scan()` to reindex, then retry the search. Pass `background: true` for fire-and-forget if the user doesn't need to see the scan results inline. See the vault-maintenance workflow in fqc-organizer for the full scan behavior.
+If the user just added or moved files outside the chat and search returns nothing you'd expect to see, the scanner may not have picked them up yet. Run `force_file_scan()` to reindex, then retry the search. Pass `background: true` for fire-and-forget if the user doesn't need to see the scan results inline. See the vault-maintenance workflow in fq-organizer for the full scan behavior.

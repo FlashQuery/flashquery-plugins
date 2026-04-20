@@ -1,9 +1,9 @@
 ---
-name: fqc-finder
-description: Find, recall, and surface existing content from the FlashQuery Core vault — documents, memories, and plugin records. Use this skill whenever the user wants to search for something, look something up, recall previously saved information, get an overview of a topic, or browse what they have stored. Trigger on phrases like "find documents about," "what do we know about," "show me the notes from," "remember when we discussed," "give me an overview of," "search for anything related to," "what did I save about," "pull up that memory about," "show me what I remembered about," "do I have any notes on," "look up," "find me," "what's stored about," "give me a briefing on," or "show me everything on." Even casual phrasing like "what do I know about X?" or "anything saved on Y?" should trigger fqc-finder.
+name: fq-finder
+description: Find, recall, and surface existing content from the FlashQuery Core vault — documents, memories, and plugin records. Use this skill whenever the user wants to search for something, look something up, recall previously saved information, get an overview of a topic, or browse what they have stored. Trigger on phrases like "find documents about," "what do we know about," "show me the notes from," "remember when we discussed," "give me an overview of," "search for anything related to," "what did I save about," "pull up that memory about," "show me what I remembered about," "do I have any notes on," "look up," "find me," "what's stored about," "give me a briefing on," or "show me everything on." Even casual phrasing like "what do I know about X?" or "anything saved on Y?" should trigger fq-finder.
 ---
 
-# fqc-finder
+# fq-finder
 
 This skill orchestrates FlashQuery Core's search and retrieval tools. Its job is to understand what the user is looking for, choose the right search strategy, and synthesize the results into a clear, actionable answer.
 
@@ -16,7 +16,7 @@ This skill orchestrates FlashQuery Core's search and retrieval tools. Its job is
 - Getting briefings and overviews on a topic
 - Following up on search results with full content retrieval
 
-Plugin record search is intentionally **not** part of fqc-base — plugin-specific skills (e.g., `fqc-crm`) own the schema context needed to interpret records correctly. If the user is asking about structured plugin data and a plugin skill is available, route there.
+Plugin record search is intentionally **not** part of fq-base — plugin-specific skills (e.g., `fq-crm`) own the schema context needed to interpret records correctly. If the user is asking about structured plugin data and a plugin skill is available, route there.
 
 ## Routing heuristic
 
@@ -46,5 +46,5 @@ Don't just dump search results. After retrieving content:
 
 - **Semantic search unavailable** — if `search_memory` or `search_all` returns an embedding error, fall back to `list_memories` with tag filters for memories and `search_documents` in filesystem mode for documents.
 - **Ambiguous filename** — if a document tool returns an ambiguity error, use the full path or fqc_id instead.
-- **No results when the user just added or moved files** — run `force_file_scan()` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fqc-organizer's [vault-maintenance](../fqc-organizer/workflows/vault-maintenance.md) workflow for a full scan + reconciliation pass.
+- **No results when the user just added or moved files** — run `force_file_scan()` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fq-organizer's [vault-maintenance](../fq-organizer/workflows/vault-maintenance.md) workflow for a full scan + reconciliation pass.
 - **No results otherwise** — let the user know nothing was found and offer to broaden the search or try different terms.

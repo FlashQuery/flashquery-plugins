@@ -16,7 +16,7 @@ Use this workflow when the user wants to browse vault files and folders by path 
 - Content-based discovery ("find notes about X") → [Document Search](document-search.md)
 - Reading the structure of a specific file (headings, links) → `get_doc_outline`
 - Cross-type search spanning documents + memories → [Unified Search](unified-search.md)
-- Browsing plugin records → out of scope for fqc-base; use the plugin's own skill
+- Browsing plugin records → out of scope for fq-base; use the plugin's own skill
 
 ## Tool: `list_files`
 
@@ -73,7 +73,7 @@ force_file_scan()          // synchronous; returns { status: "complete", new_fil
 force_file_scan(background: true)   // fire-and-forget; returns immediately
 ```
 
-See [vault-maintenance](../../fqc-organizer/workflows/vault-maintenance.md) in fqc-organizer for the fuller picture of when scanning fits into a session.
+See [vault-maintenance](../../fq-organizer/workflows/vault-maintenance.md) in fq-organizer for the fuller picture of when scanning fits into a session.
 
 ## Synthesis guidance
 

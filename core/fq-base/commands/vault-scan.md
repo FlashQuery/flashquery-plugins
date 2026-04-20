@@ -26,7 +26,7 @@ After a synchronous scan, report all four counts — even zeros confirm coverage
 
 If all counts are zero: "Vault scan complete — everything is already in sync."
 
-If there are lingering issues after the scan (documents still missing from search), suggest running `/fqc-base:reconcile` next — it promotes truly missing `missing` rows to `archived` status.
+If there are lingering issues after the scan (documents still missing from search), suggest running `/fq-base:reconcile` next — it promotes truly missing `missing` rows to `archived` status.
 
 ## Error handling
 

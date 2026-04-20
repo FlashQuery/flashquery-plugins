@@ -16,8 +16,8 @@ These tools all preserve data in one way or another — moves keep the fqc_id, c
 
 - Bulk tag changes → [Bulk Tagging](bulk-tagging.md)
 - Archive sweeps based on search criteria → [Archive Sweep](archive-sweep.md)
-- Single-document body edits → fqc-writer workflows
-- Creating a brand-new document → fqc-writer's document-creation workflow
+- Single-document body edits → fq-writer workflows
+- Creating a brand-new document → fq-writer's document-creation workflow
 
 ---
 

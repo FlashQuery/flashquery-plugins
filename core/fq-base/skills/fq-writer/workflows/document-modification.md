@@ -66,7 +66,7 @@ Use for any incremental tag add/remove. This is the preferred tool for tag mutat
 
 **Status tag conflicts:** You can only have one `#status/*` tag at a time. To change status, pass the old status in `remove_tags` and the new one in `add_tags` in the same call.
 
-**Batch tagging:** To tag many documents at once, pass an array of identifiers to `identifiers`. All documents get the same add/remove applied. (For large batch operations based on a search, use fqc-organizer instead.)
+**Batch tagging:** To tag many documents at once, pass an array of identifiers to `identifiers`. All documents get the same add/remove applied. (For large batch operations based on a search, use fq-organizer instead.)
 
 ---
 
@@ -113,12 +113,12 @@ Single-document form (the common case here):
 archive_document(identifiers: "clients/acme/pricing-old.md")
 ```
 
-Batch form (used from fqc-organizer sweeps, shown for completeness):
+Batch form (used from fq-organizer sweeps, shown for completeness):
 ```
 archive_document(identifiers: ["path1.md", "path2.md"])
 ```
 
-The tool updates both the vault frontmatter and the database. It's idempotent — archiving an already-archived document is safe. For large-scale archive sweeps based on search criteria, use fqc-organizer.
+The tool updates both the vault frontmatter and the database. It's idempotent — archiving an already-archived document is safe. For large-scale archive sweeps based on search criteria, use fq-organizer.
 
 ---
 
@@ -132,7 +132,7 @@ The tool updates both the vault frontmatter and the database. It's idempotent �
 
 **"Tag all the Q1 deliverables as complete"**
 → For a single doc: `apply_tags` (add: `#status/complete`, remove: `#status/draft`)
-→ For bulk: use fqc-organizer
+→ For bulk: use fq-organizer
 
 **"Archive the old pricing brief"**
 → `archive_document` (identifiers: "clients/acme/pricing-brief.md")
