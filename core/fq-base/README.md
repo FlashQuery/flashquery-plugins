@@ -2,11 +2,11 @@
 version: 1.0.0
 ---
 
-# fqc-base
+# fq-base
 
 Core FlashQuery skills for writing, finding, and organizing vault documents and memories, plus vault maintenance slash commands.
 
-This plugin provides the foundational AI workflows for day-to-day use of FlashQuery Core. Install it alongside any FQC instance to give Claude the tool sequences it needs to work with your vault naturally.
+This plugin provides the foundational AI workflows for day-to-day use of FlashQuery. Install it alongside any FlashQuery instance to give Claude the tool sequences it needs to work with your vault naturally.
 
 ---
 
@@ -14,7 +14,7 @@ This plugin provides the foundational AI workflows for day-to-day use of FlashQu
 
 Skills are auto-invoked by Claude based on what you say. You don't call them directly.
 
-### fqc-writer
+### fq-writer
 **Triggers on:** "write this up," "create a document about," "draft a note on," "add a section to," "log this under Interactions," "rewrite the Pricing section," "remember that," "save this for later," "update that memory," "forget that," and similar phrases.
 
 Orchestrates document creation, modification, and memory management:
@@ -23,7 +23,7 @@ Orchestrates document creation, modification, and memory management:
 - Section-scoped edits: insert at a specific heading/position (`insert_in_doc`) or replace a specific section (`replace_doc_section`)
 - Saves, updates, and archives memories
 
-### fqc-finder
+### fq-finder
 **Triggers on:** "find documents about," "what do we know about," "show me the notes from," "give me a briefing on," "what did I save about," "pull up that memory about," and similar phrases.
 
 Orchestrates search and retrieval across your vault:
@@ -33,7 +33,7 @@ Orchestrates search and retrieval across your vault:
 - Memory recall (semantic search + tag browsing)
 - Briefings: structured overview of a topic using tags
 
-### fqc-organizer
+### fq-organizer
 **Triggers on:** "clean up," "organize," "archive old documents," "bulk tag," "tag everything in this project as," "archive anything older than," and similar phrases.
 
 Orchestrates bulk operations and vault maintenance with a confirm-before-execute workflow:
@@ -50,23 +50,23 @@ Commands are slash commands you invoke explicitly.
 
 | Command | Description |
 |---------|-------------|
-| `/fqc-base:vault-scan` | Scan the vault to discover new, moved, and deleted files. Accepts optional `background` argument. |
-| `/fqc-base:reconcile` | Reconcile the database against the filesystem — fixes stale paths, archives truly missing files. Accepts optional `dry-run` argument. |
-| `/fqc-base:vault-health` | Full health check: scan + reconcile + hygiene audit in one comprehensive report. |
+| `/fq-base:vault-scan` | Scan the vault to discover new, moved, and deleted files. Accepts optional `background` argument. |
+| `/fq-base:reconcile` | Reconcile the database against the filesystem — fixes stale paths, archives truly missing files. Accepts optional `dry-run` argument. |
+| `/fq-base:vault-health` | Full health check: scan + reconcile + hygiene audit in one comprehensive report. |
 
 ### When to use each
 
-**`/fqc-base:vault-scan`** — after importing files into your vault outside the conversation. Walks the filesystem to update the database.
+**`/fq-base:vault-scan`** — after importing files into your vault outside the conversation. Walks the filesystem to update the database.
 
-**`/fqc-base:reconcile`** — after moving or deleting files outside FQC. Walks the database to verify each file still exists, fixes moved paths, and permanently archives truly deleted files.
+**`/fq-base:reconcile`** — after moving or deleting files outside FlashQuery. Walks the database to verify each file still exists, fixes moved paths, and permanently archives truly deleted files.
 
-**`/fqc-base:vault-health`** — periodic maintenance or when something feels off. Runs both of the above plus a hygiene audit in one go.
+**`/fq-base:vault-health`** — periodic maintenance or when something feels off. Runs both of the above plus a hygiene audit in one go.
 
 ---
 
 ## MCP Tools Required
 
-This plugin's skills call the following FQC MCP tools. Your FQC instance must be running and connected for this plugin to work:
+This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery instance must be running and connected for this plugin to work:
 
 **Document tools:** `create_document`, `get_document`, `update_document`, `archive_document`, `search_documents`, `move_document`, `copy_document`, `reconcile_documents`
 
@@ -82,6 +82,6 @@ This plugin's skills call the following FQC MCP tools. Your FQC instance must be
 
 ## Plugin Composition
 
-`fqc-base` is designed to be the foundation layer. Plugin-specific skills (like `fqc-crm`) can delegate to these core skills for vault and memory operations, then layer their own record tool orchestration on top.
+`fq-base` is designed to be the foundation layer. Plugin-specific skills (like `fq-crm`) can delegate to these core skills for vault and memory operations, then layer their own record tool orchestration on top.
 
-For example, an `fqc-crm` skill that needs to create a contact note would use `fqc-writer`'s document creation logic, then use its own plugin-specific record tools to link the plugin record.
+For example, an `fq-crm` skill that needs to create a contact note would use `fq-writer`'s document creation logic, then use its own plugin-specific record tools to link the plugin record.

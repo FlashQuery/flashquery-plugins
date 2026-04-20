@@ -1,9 +1,9 @@
 {
-  "name": "fqc-base",
+  "name": "fq-base",
   "version": "1.0.0",
   "description": "Core FlashQuery skills for writing, finding, and organizing vault documents and memories, plus vault maintenance commands.",
   "author": {
     "name": "FlashQuery"
   },
-  "keywords": ["flashquery", "vault", "documents", "memories", "fqc"]
+  "keywords": ["flashquery", "vault", "documents", "memories", "fq"]
 }

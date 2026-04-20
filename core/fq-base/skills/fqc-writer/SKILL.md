@@ -1,11 +1,11 @@
 ---
-name: fqc-writer
-description: Create, modify, and organize vault documents and memories using FlashQuery Core. Use this skill whenever the user wants to write something up, draft a note, create a document, add content to an existing document, insert content at a specific heading, replace the content of a specific section, prepend content to the top of a doc, tag documents, link docs together, remember something for later, update a memory, or archive/forget a memory. Trigger on phrases like "write this up," "create a document about," "draft a note on," "add a section to," "log this under the Interactions heading," "rewrite the Pricing section," "insert this after the Background heading," "put a status banner at the top," "save this as a doc," "tag this document," "link these two docs," "update the meeting notes," "remember that," "save this for later," "update that memory," "that memory is outdated," "forget that," or "archive the memory about." Even casual phrases like "jot this down" or "keep track of this" should trigger fqc-writer.
+name: fq-writer
+description: Create, modify, and organize vault documents and memories using FlashQuery. Use this skill whenever the user wants to write something up, draft a note, create a document, add content to an existing document, insert content at a specific heading, replace the content of a specific section, prepend content to the top of a doc, tag documents, link docs together, remember something for later, update a memory, or archive/forget a memory. Trigger on phrases like "write this up," "create a document about," "draft a note on," "add a section to," "log this under the Interactions heading," "rewrite the Pricing section," "insert this after the Background heading," "put a status banner at the top," "save this as a doc," "tag this document," "link these two docs," "update the meeting notes," "remember," "remember to," "remember that," "save this for later," "update that memory," "that memory is outdated," "forget that," or "archive the memory about." Even casual phrases like "jot this down" or "keep track of this" should trigger fq-writer.
 ---
 
-# fqc-writer
+# fq-writer
 
-This skill orchestrates FlashQuery Core's document and memory write tools. Its job is to figure out what the user wants to capture or organize, choose the right tool sequence, and execute it cleanly.
+This skill orchestrates FlashQuery's document and memory write tools. Its job is to figure out what the user wants to capture or organize, choose the right tool sequence, and execute it cleanly.
 
 ## What this skill owns
 

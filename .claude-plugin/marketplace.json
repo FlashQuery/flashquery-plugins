@@ -5,20 +5,20 @@
     "email": "matt@flashquery.ai"
   },
   "metadata": {
-    "description": "Official plugins for FlashQuery Core to power by your AI and your data sovereignty."
+    "description": "Official plugins for FlashQuery to power by your AI and your data sovereignty."
   },
   "plugins": [
     {
       "name": "crm",
-      "description": "A CRM powered by FlashQuery Core — contact management through conversation, not application.",
+      "description": "A CRM powered by FlashQuery — contact management through conversation, not application.",
       "version": "1.5.0",
       "source": "./apps/crm"
     },
     {
-      "name": "fqc-base",
+      "name": "fq-base",
       "version": "1.0.0",
       "description": "Core FlashQuery skills for writing, finding, and organizing vault documents and memories, plus vault maintenance commands.",
-      "source": "./core/fqc-base"
+      "source": "./core/fq-base"
     },
     {
       "name": "product-brain",
