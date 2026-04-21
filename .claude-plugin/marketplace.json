@@ -25,6 +25,12 @@
       "description": "A product knowledge management plugin — capture, organize, and synthesize product intelligence through conversation.",
       "version": "0.1.0",
       "source": "./apps/product-brain"
+    },
+    {
+      "name": "fq-skill-creator",
+      "description": "Meta-skill for creating new Claude skills that use FlashQuery MCP tools for document storage, search, memory, and data management.",
+      "version": "1.0.0",
+      "source": "./core/fq-skill-creator"
     }
   ]
 }
