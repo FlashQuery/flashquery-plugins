@@ -1,0 +1,15 @@
+{
+  "name": "context-manager",
+  "version": "1.0.0",
+  "description": "Save and restore conversation context across Claude sessions using FlashQuery's vault.",
+  "author": {
+    "name": "FlashQuery",
+    "email": "matt@flashquery.ai"
+  },
+  "keywords": [
+    "context",
+    "sessions",
+    "flashquery",
+    "continuity"
+  ]
+}
