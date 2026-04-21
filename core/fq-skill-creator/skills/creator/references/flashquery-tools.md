@@ -838,36 +838,43 @@ Register or update a plugin from a YAML schema definition. Creates plugin tables
 
 **Returns:** Registration confirmation with created/migrated tables.
 
-**Example YAML schema:**
+**Example YAML schema (tables and columns are arrays, not maps):**
 ```yaml
-plugin:
-  id: my-plugin
-  name: My Plugin
-  version: "1.0"
+id: my-plugin
+name: My Plugin
+version: "1.0"
 
 tables:
-  entries:
+  - name: entries
     description: Main data entries
+    embed_fields:
+      - name
+      - category
     columns:
-      name:
+      - name: name
         type: text
         required: true
         description: Entry name
-      category:
+      - name: category
         type: text
         description: Entry category
-      priority:
+      - name: priority
         type: integer
         description: Priority level (1-5)
-    search:
-      enabled: true
-      fields: [name, category]
 ```
+
+**Schema format rules:**
+- `tables` is an **array** of objects (`- name: ...`), not a map. Map-style (`tables: { entries: { ... } }`) is not supported.
+- `columns` is an **array** of objects (`- name: ...`), not a map.
+- Column `type` must be one of: `text`, `integer`, `boolean`, `uuid`, `timestamptz`.
+- Use `embed_fields` (array of column names) at the table level to enable semantic search. There is no separate `search:` block.
+- When `embed_fields` is present, the system automatically adds `embedding` and `embedding_updated_at` columns — don't define them manually.
+- Plugin metadata (`id`, `name`, `version`) can be at root level (shown above) or nested under `plugin:`.
 
 **Example — register from inline YAML:**
 ```
 mcp__flashquery__register_plugin({
-  schema_yaml: "plugin:\n  id: my-plugin\n  name: My Plugin\n  version: \"1.0\"\n..."
+  schema_yaml: "id: my-plugin\nname: My Plugin\nversion: \"1.0\"\ntables:\n  - name: entries\n    columns:\n      - name: title\n        type: text\n        required: true\n"
 })
 ```
 

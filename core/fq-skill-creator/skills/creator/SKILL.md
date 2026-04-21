@@ -186,31 +186,38 @@ If the skill manages structured records (not just documents and memories), it ne
 2. The skill body should instruct the model to call `register_plugin` with either `schema_path` or `schema_yaml` on first use
 3. After registration, the skill uses `create_record`, `get_record`, `update_record`, `search_records`, and `archive_record` with the `plugin_id` and `table` name
 
-Example YAML schema structure:
+Example YAML schema structure (tables and columns are arrays, not maps):
 ```yaml
-plugin:
-  id: my-skill-plugin
-  name: My Skill Plugin
-  version: "1.0"
+id: my-skill-plugin
+name: My Skill Plugin
+version: "1.0"
 
 tables:
-  entries:
+  - name: entries
     description: Main data entries
+    embed_fields:
+      - name
+      - category
+      - notes
     columns:
-      name:
+      - name: name
         type: text
         required: true
         description: Entry name
-      category:
+      - name: category
         type: text
         description: Entry category
-      notes:
+      - name: notes
         type: text
         description: Additional notes
-    search:
-      enabled: true
-      fields: [name, category, notes]
 ```
+
+Key schema rules:
+- `tables` is an array of objects (`- name: ...`), not a map
+- `columns` is an array of objects (`- name: ...`), not a map
+- Column `type` must be one of: `text`, `integer`, `boolean`, `uuid`, `timestamptz`
+- Use `embed_fields` (array of column names) at the table level to enable semantic search — there is no separate `search:` block
+- Plugin metadata (`id`, `name`, `version`) can be at root level or nested under `plugin:`
 
 ## Completing the workflow
 

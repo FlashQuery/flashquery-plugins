@@ -47,10 +47,10 @@ When the user asks about a specific person or company:
 3. **Discover relationships**: Call `get_doc_outline` on the vault document. This returns all outbound links without reading the full body — use it to find connected entities (contacts linked to a company, companies a contact works with).
 
 4. **Surface memories**: Two complementary calls here:
-   - Call `search_memory` with the entity's name and relevant terms (e.g., "Sarah Chen relationship impression deal") and `plugin_scope: "crm"`. This uses semantic search to find contextually relevant memories — good for surfacing things that are thematically related even if they weren't explicitly tagged to this entity.
-   - Call `list_memories` with `tags` scoped to the entity (e.g., the entity's name or CRM plugin tags) and `plugin_scope: "crm"`. This is an exhaustive listing — it catches every memory that was tagged to this entity, even ones that wouldn't rank highly in a semantic search. Together, the two calls ensure nothing is missed.
+   - Call `search_memory` with the entity's name and relevant terms (e.g., "Sarah Chen relationship impression deal") and `tags: ["crm"]`. This uses semantic search to find contextually relevant memories — good for surfacing things that are thematically related even if they weren't explicitly tagged to this entity.
+   - Call `list_memories` with `tags` containing the entity's name (e.g., `["crm", "Sarah Chen"]`). This is an exhaustive listing — it catches every memory that was tagged to this entity, even ones that wouldn't rank highly in a semantic search. Together, the two calls ensure nothing is missed.
 
-5. **Check the user's behavioral preferences**: Call `search_memory` with `query: "CRM preference briefing style"` and `plugin_scope: "crm"` to check if the user has saved preferences about how they want intelligence presented.
+5. **Check the user's behavioral preferences**: Call `search_memory` with `query: "CRM preference briefing style"` and `tags: ["crm"]` to check if the user has saved preferences about how they want intelligence presented.
 
 6. **Synthesize and respond**. For meeting prep, structure the response as:
    - **Background**: who they are, their role, their company
@@ -65,7 +65,7 @@ When the user asks about a specific person or company:
 
 When the user asks about their overall CRM rather than a specific entity:
 
-1. **Get an orientation** — but only for open-ended queries. If the user says something like "what's going on in my CRM?" or "give me an overview of my pipeline", call `search_all` with a broad query (e.g., `"active contacts deals opportunities"`) and `plugin_scope: "crm"`. This crosses all three layers — documents, records, and memories — in a single call and surfaces the most relevant CRM data as a starting point.
+1. **Get an orientation** — but only for open-ended queries. If the user says something like "what's going on in my CRM?" or "give me an overview of my pipeline", call `search_all` with a broad query (e.g., `"active contacts deals opportunities"`) and `tags: ["crm"]`. This crosses documents and memories in a single call and surfaces the most relevant CRM data as a starting point.
 
    For specific structured queries ("what's closing this quarter?", "who haven't I spoken to in 30 days?"), skip this step and go directly to step 2 — `search_all` adds latency without benefit when you already know exactly what table and field to query.
 
@@ -75,7 +75,7 @@ When the user asks about their overall CRM rather than a specific entity:
    - Active entities: `filters: { status: "active" }` on contacts or businesses.
    - For full pipeline overviews, query both `"opportunities"` (structured deal records) and `"contacts"` / `"businesses"` (for stage tags on entities themselves).
 
-3. **Surface ambient intelligence**: Call `search_memory` with `query` terms relevant to the query (e.g., `"pipeline deal opportunity"` or `"follow up overdue"`) and `plugin_scope: "crm"`. For broader sweeps, also call `list_memories` with `plugin_scope: "crm"` to see all stored memories by category — particularly useful for pipeline queries where deal context memories across multiple entities may be relevant. CRM memories often contain deal context and relationship signals that aren't queryable from records alone.
+3. **Surface ambient intelligence**: Call `search_memory` with `query` terms relevant to the query (e.g., `"pipeline deal opportunity"` or `"follow up overdue"`) and `tags: ["crm"]`. For broader sweeps, also call `list_memories` with `tags: ["crm"]` to see all stored CRM memories — particularly useful for pipeline queries where deal context memories across multiple entities may be relevant. CRM memories often contain deal context and relationship signals that aren't queryable from records alone.
 
 4. **Synthesize**: Present the results organized by what the user needs — deals by stage, contacts by last interaction date, or whatever grouping is most useful for the query.
 

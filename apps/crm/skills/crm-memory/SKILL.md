@@ -67,8 +67,8 @@ Call `save_memory` with:
   ```
   [relationship_context] Sarah Chen seems frustrated with her current data vendor — she mentioned slow support response times as her main pain point. Good opening for a conversation about switching.
   ```
-- `plugin_scope`: `"crm"` — scopes this memory to the CRM plugin so it's retrievable in CRM context
-- `tags`: relevant entity names or terms to improve retrieval, e.g., `["Sarah Chen", "data vendor"]` or `["Acme Corp", "expansion"]`
+- `plugin_scope`: `"crm"` — scopes this memory to the CRM plugin
+- `tags`: always include `"crm"` plus any relevant entity names or terms, e.g., `["crm", "Sarah Chen", "data vendor"]` or `["crm", "Acme Corp", "expansion"]`. The `"crm"` tag is required — it is the only reliable way to filter CRM memories in `search_memory` and `list_memories` queries, which do not support `plugin_scope` filtering.
 
 Confirm to the user: "Saved. I'll surface this when you ask about [entity] next time."
 
@@ -78,7 +78,7 @@ When the user asks what's remembered about an entity, or when context is needed 
 
 Call `search_memory` with:
 - `query`: the entity name plus relevant terms, e.g., `"Sarah Chen relationship context"` or `"Acme Corp strategy intelligence"`
-- `plugin_scope`: `"crm"` — limits results to memories saved in CRM context
+- `tags`: `["crm"]` — filter to CRM memories (only works if memories were saved with the `"crm"` tag, which is required by this skill's save pattern above)
 - `limit`: 5-10 results is usually sufficient
 
 Present relevant memories with their content. Use judgment to filter out memories that aren't relevant to the current question.

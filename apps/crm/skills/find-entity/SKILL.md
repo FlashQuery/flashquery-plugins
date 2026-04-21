@@ -62,7 +62,7 @@ When the user wants to read everything about a contact or business — "show me 
 1. Use `search_records` to find the entity if you don't already have a document path.
 2. Use `search_documents` with the entity name as the `query` and `mode: "semantic"` to find the vault document path if needed.
 3. Call `get_document` with the vault path to retrieve the full document content.
-4. Call `list_memories` with `tags` scoped to the entity (e.g., the entity's name or relevant CRM tags) and `plugin_scope: "crm"` to retrieve all stored CRM memories for this entity — impressions, communication preferences, deal context, and company intelligence. This catches everything the AI knows about the entity beyond what's in the vault document.
+4. Call `list_memories` with `tags` scoped to the entity (e.g., the entity's name or relevant CRM tags) to retrieve stored CRM memories for this entity — impressions, communication preferences, deal context, and company intelligence. This catches everything tagged directly to this entity.
 5. Present a unified view: the full document (frontmatter metadata, all sections, interaction timeline, and relationship links) followed by any memories found. Group memories by category (communication preferences, relationship context, deal context, company intelligence) for readability.
 
 ## When nothing is found

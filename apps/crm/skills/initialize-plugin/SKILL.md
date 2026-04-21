@@ -83,7 +83,7 @@ Now that you know the user's folder structure, re-read `references/schema.yaml` 
 
 Call `register_plugin` again with the updated `schema_yaml`. Same-version re-registration is safe — it updates the folder claims without re-executing table DDL.
 
-This step is essential: without folder claims, the discovery orchestrator cannot route documents in these folders to the CRM plugin, and callbacks will not fire for CRM-owned documents.
+This step is essential: without folder claims, the plugin cannot assert ownership of documents in these folders — ownership tracking enables plugin-scoped queries and correct document routing in multi-plugin environments.
 
 ### 4. Configure plugin instance (optional)
 
