@@ -19,7 +19,13 @@ Your data lives in three places, each optimized for a different use. Vault docum
 
 ## Installation & Setup
 
-Install the plugin:
+First, make sure you've added the FlashQuery marketplace to Claude Code (one-time step — see [Getting Started](../README.md#getting-started) in the root README):
+
+```
+/plugin marketplace add https://github.com/FlashQuery/flashquery-plugins
+```
+
+Then install the plugin:
 
 ```
 /plugin install crm@flashquery-plugins

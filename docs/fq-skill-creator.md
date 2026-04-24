@@ -20,6 +20,14 @@ Think of it as the "teach Claude how to write FlashQuery-powered skills" plugin.
 
 ## Installation
 
+First, make sure you've added the FlashQuery marketplace to Claude Code (one-time step — see [Getting Started](../README.md#getting-started) in the root README):
+
+```
+/plugin marketplace add https://github.com/FlashQuery/flashquery-plugins
+```
+
+Then install the plugin:
+
 ```
 /plugin install fq-skill-creator@flashquery-plugins
 ```

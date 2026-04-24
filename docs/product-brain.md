@@ -21,7 +21,13 @@ All interaction happens through conversation with your Claude assistant. There i
 
 ## Installation & Setup
 
-Install the plugin:
+First, make sure you've added the FlashQuery marketplace to Claude Code (one-time step — see [Getting Started](../README.md#getting-started) in the root README):
+
+```
+/plugin marketplace add https://github.com/FlashQuery/flashquery-plugins
+```
+
+Then install the plugin:
 
 ```
 /plugin install product-brain@flashquery-plugins

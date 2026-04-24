@@ -51,8 +51,16 @@ You need two things before installing plugins:
 Point Claude Code at this repository to access all available plugins:
 
 ```
+/plugin marketplace add https://github.com/FlashQuery/flashquery-plugins
+```
+
+Or using the shorthand form:
+
+```
 /plugin marketplace add flashquery/flashquery-plugins
 ```
+
+If Claude Code prompts you for a URL, provide the full GitHub URL: `https://github.com/FlashQuery/flashquery-plugins`
 
 This registers the FlashQuery plugin marketplace in your Claude Code configuration. You only need to do this once.
 
