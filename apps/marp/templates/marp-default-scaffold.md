@@ -1,6 +1,5 @@
 ---
 marp: true
-html: true
 paginate: true
 class: dark
 style: |

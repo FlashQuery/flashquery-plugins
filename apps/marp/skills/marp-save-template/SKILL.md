@@ -2,7 +2,7 @@
 name: marp-save-template
 description: >
   Register a MARP template — either an existing vault document or a new one created from
-  scratch. Saves a template memory so marp-slides can automatically match it to the right
+  scratch. Saves a template memory so marp-create can automatically match it to the right
   presentation context. Triggers on "save marp template", "register marp template",
   "add marp template for X", "create marp template for X", "new marp template".
 version: 1.0
@@ -11,13 +11,13 @@ updated: 2026-04-24
 
 # MARP Save Template
 
-Registers a MARP template so the `marp-slides` skill can automatically select it when the presentation context matches. Each template gets a memory entry with a natural-language `use_for` description that drives semantic matching at creation time.
+Registers a MARP template so the `marp-create` skill can automatically select it when the presentation context matches. Each template gets a memory entry with a natural-language `use_for` description that drives semantic matching at creation time.
 
 ---
 
 ## Step 0 — Load configuration
 
-Call `mcp__flashquery-core__search_memory` with `query: "marp_config presentations templates folder"` and `tags: ["marp-config"]`.
+Call `mcp__flashquery__search_memory` with `query: "marp_config presentations templates folder"` and `tags: ["marp-config"]`.
 
 If no config memory is found, ask the user where their templates folder is. Suggest running `marp-configure` first if they haven't set things up yet.
 
@@ -41,18 +41,18 @@ Ask:
 
 **If existing file:**
 - Ask for the vault path or name of the file
-- Call `mcp__flashquery-core__search_documents({ query: "<name>", tags: ["#marp-template"], mode: "filesystem" })` to find it
+- Call `mcp__flashquery__search_documents({ query: "<name>", tags: ["#marp-template"], mode: "mixed" })` to find it
 - Confirm the match with the user
 - Use the returned `fqc_id` — do not create a new document
 
 **If from scratch:**
 - Ask: "Start from the minimal template (2 slides) or the full scaffold (title, agenda, sections, closing)?"
-- Call `mcp__flashquery-core__search_memory({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
-- Read it with `mcp__flashquery-core__get_document({ identifier: "<fqc_id>" })`
+- Call `mcp__flashquery__search_memory({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
+- Read it with `mcp__flashquery__get_document({ identifier: "<fqc_id>" })`
 - Use that content as the base for the new template
 - Save a new copy to the templates folder:
   ```
-  mcp__flashquery-core__create_document({
+  mcp__flashquery__create_document({
     title: "MARP Template — <name>",
     content: "<base template content>",
     path: "<templates_folder>/<slugified-name>.md",
@@ -83,9 +83,9 @@ If the user is vague, offer a few examples and ask them to expand. The quality o
 
 ## Step 4 — Save template memory
 
-Call `mcp__flashquery-core__save_memory`:
+Call `mcp__flashquery__save_memory`:
 ```
-mcp__flashquery-core__save_memory({
+mcp__flashquery__save_memory({
   content: "[marp_template] name: <name> — fqc_id: <uuid> — path: <vault path> — use_for: <use-for description>",
   tags: ["marp-config", "marp-template"]
 })
@@ -107,7 +107,7 @@ Tell the user:
 
 ## Light/dark mode reminder
 
-Both bundled templates support light and dark mode via a single CSS file — no separate files needed. When the template is used to create a deck, `marp-slides` will ask the user to choose light or dark, then set `class: dark` in the frontmatter (dark) or omit it (light). Remind the user of this if they're setting up a branded template so they know to use the same CSS variable pattern.
+Both bundled templates support light and dark mode via a single CSS file — no separate files needed. When the template is used to create a deck, `marp-create` will ask the user to choose light or dark, then set `class: dark` in the frontmatter (dark) or omit it (light). Remind the user of this if they're setting up a branded template so they know to use the same CSS variable pattern.
 
 ---
 

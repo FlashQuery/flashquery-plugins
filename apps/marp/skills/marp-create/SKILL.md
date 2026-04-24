@@ -1,22 +1,18 @@
 ---
-name: marp-slides
-description: Create and manage MARP presentation decks with SVG charts, dashboard components, animations, dark/light themes. Saves decks to the FlashQuery vault. Triggers on 'marp', 'slides', 'presentation', 'deck', 'create a presentation', 'make a slide deck'.
+name: marp-create
+description: Create a new MARP presentation deck with SVG charts, dashboard components, animations, dark/light themes. Saves to the FlashQuery vault. Triggers on 'create a presentation', 'make slides', 'new deck', 'new presentation', 'marp create', 'build a deck', 'create slide deck'.
 version: 1.0
 updated: 2026-04-24
 ---
 
-# MARP Slides v3
+# MARP Create
 
 ## Prerequisites
 - VS Code extension "Marp for VS Code"
-- VS Code settings: `markdown.marp.enableHtml: true` + `markdown.marp.allowLocalFiles: true`
+- VS Code settings: `MARP: HTML` → `all` and `markdown.marp.allowLocalFiles: true`
 - Export: `npx @marp-team/marp-cli slides.md --pdf --allow-local-files`
 
-**SVG and inline HTML require two things to render correctly — both must be present:**
-1. VS Code setting `markdown.marp.enableHtml: true` (controls the preview pane)
-2. `html: true` in the slide document's YAML frontmatter (controls CLI export and acts as a second gate in preview)
-
-Without `html: true` in the frontmatter, `<svg>` and other HTML tags render as escaped literal text at the top of slides. Always include it when generating a deck.
+**SVG and inline HTML require the `MARP: HTML` VS Code setting set to `all` (`"markdown.marp.enableHtml": "all"` in settings.json) — this is the only switch that matters for preview.** `html: true` is NOT a valid MARP frontmatter key and has no effect. For CLI export, pass `--html` to the command, or add `html: true` to a `.marprc.yml` file in the same directory as the presentation.
 
 ---
 
@@ -26,9 +22,9 @@ This skill saves decks to the FlashQuery vault and recalls user preferences acro
 
 ### Step 0 — Recall configuration
 
-At the start of every generation, call `mcp__flashquery-core__search_memory` to load saved configuration:
+At the start of every generation, call `mcp__flashquery__search_memory` to load saved configuration:
 ```
-mcp__flashquery-core__search_memory({
+mcp__flashquery__search_memory({
   query: "marp_config presentations_folder templates_folder",
   tags: ["marp-config"]
 })
@@ -42,7 +38,7 @@ If no config memory is found, suggest the user run `marp-configure` first, then 
 
 Use the presentation topic (from what the user said) to find the best-matching template. Call:
 ```
-mcp__flashquery-core__search_memory({
+mcp__flashquery__search_memory({
   query: "<presentation topic or description the user provided>",
   tags: ["marp-template"]
 })
@@ -53,13 +49,13 @@ mcp__flashquery-core__search_memory({
 - **Multiple plausible matches**: list the top 2–3 by name and ask the user to choose
 - **Weak or no match**: fall back to listing all registered templates:
   ```
-  mcp__flashquery-core__list_memories({ tags: ["marp-template"] })
+  mcp__flashquery__list_memories({ tags: ["marp-template"] })
   ```
   Present names and `use_for` descriptions. User picks one, or chooses "none / start from scratch".
 
 **Once a template is selected**, read it:
 ```
-mcp__flashquery-core__get_document({
+mcp__flashquery__get_document({
   identifier: "<fqc_id from the template memory>"
 })
 ```
@@ -78,33 +74,19 @@ After selecting a template (or starting from scratch), ask:
 
 Both bundled templates support both modes via CSS custom properties — no other changes are needed.
 
-### Step 2 — Find an existing deck (when updating)
-
-If the user says "update my deck on X", "find my presentation about Y", or similar, search before generating:
-```
-mcp__flashquery-core__search_documents({
-  query: "<user's topic>",
-  tags: ["#marp"],
-  mode: "mixed",
-  limit: 5
-})
-```
-
-Check `isError`. If results are found, confirm which deck to update. Use `mcp__flashquery-core__get_document` with the `fqc_id` to read existing content, then update with `mcp__flashquery-core__update_document`.
-
-### Step 3 — Save the generated deck
+### Step 2 — Save the generated deck
 
 After generating, ask the user where to save. Use the `presentations_folder` from Step 0 as the default base:
 > "Where would you like to save this deck? (default: `<presentations_folder>/<title>.md`)"
 
 Then call:
 ```
-mcp__flashquery-core__create_document({
+mcp__flashquery__create_document({
   title: "<deck title>",
   content: "<full marp markdown>",
   path: "<vault-relative path>",
   tags: ["#marp", "#status/draft"],
-  frontmatter: { marp: true, html: true }
+  frontmatter: { marp: true }
 })
 ```
 

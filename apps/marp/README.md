@@ -1,6 +1,6 @@
 ---
 name: marp
-version: 1.0.0
+version: 1.1.0
 ---
 
 # MARP Plugin
@@ -14,15 +14,17 @@ This plugin integrates MARP (Markdown Presentation Ecosystem) with your FlashQue
 ## Prerequisites
 
 - VS Code extension: **Marp for VS Code**
-- VS Code settings: `markdown.marp.enableHtml: true` and `markdown.marp.allowLocalFiles: true`
+- VS Code settings: `MARP: HTML` → `all` (`"markdown.marp.enableHtml": "all"`) and `markdown.marp.allowLocalFiles: true`
 - FlashQuery MCP server running (for vault storage and template memory)
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/marp:slides <topic>` | Create a new presentation deck |
 | `/marp:configure` | Set up folder structure and install default templates |
+| `/marp:create <topic>` | Create a new presentation deck |
+| `/marp:edit <deck> — <changes>` | Edit an existing deck (content, components, or structure) |
+| `/marp:export <deck> [pdf\|pptx\|html]` | Export a deck to PDF, PPTX, or HTML |
 | `/marp:save-template <name>` | Register a template for automatic selection |
 
 ## Skills
@@ -31,8 +33,10 @@ The following skills auto-trigger on relevant keywords — you don't need to use
 
 | Skill | Triggers on |
 |-------|------------|
-| `marp-slides` | "marp", "slides", "presentation", "deck", "create a presentation" |
 | `marp-configure` | "configure marp", "set up marp", "marp setup", "initialize marp" |
+| `marp-create` | "create a presentation", "new deck", "make slides", "marp create" |
+| `marp-edit` | "edit my presentation", "update slides", "add a slide", "marp edit" |
+| `marp-export` | "export to pdf", "export slides", "convert to pdf", "marp export" |
 | `marp-save-template` | "save marp template", "register marp template", "add marp template for X" |
 
 ## Bundled Templates

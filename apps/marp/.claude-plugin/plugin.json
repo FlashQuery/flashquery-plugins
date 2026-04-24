@@ -1,6 +1,6 @@
 {
   "name": "marp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Create and manage beautiful MARP presentation decks — SVG charts, dashboard components, dark/light themes, stored in your FlashQuery vault.",
   "author": {
     "name": "FlashQuery",

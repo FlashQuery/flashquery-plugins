@@ -34,11 +34,31 @@ Default is one level inside the presentations folder. Accept any vault-relative 
 
 ---
 
-## Step 3 — Save configuration memory
+## Step 3 — VS Code HTML setting check
 
-Call `mcp__flashquery-core__save_memory` with:
+Inform the user:
+
+> "If you're using VS Code to preview or export presentations, make sure this setting is enabled — without it, SVG charts and inline HTML will appear as raw text instead of rendering:
+>
+> **Setting:** `MARP: HTML` (search for *marp html* in VS Code Settings)  
+> **Value:** `all`
+>
+> Or add it directly to your `settings.json`:
+> ```json
+> "markdown.marp.enableHtml": "all",
+> "markdown.marp.allowLocalFiles": true
+> ```
+> For CLI export, add `--html` to your command or create a `.marprc.yml` file next to your presentation with `html: true`."
+
+Ask: *"Have you set this, or would you like a reminder of where to find it?"* — then continue regardless of the answer.
+
+---
+
+## Step 4 — Save configuration memory
+
+Call `mcp__flashquery__save_memory` with:
 ```
-mcp__flashquery-core__save_memory({
+mcp__flashquery__save_memory({
   content: "[marp_config] presentations_folder: <path> — templates_folder: <path>",
   tags: ["marp-config"]
 })
@@ -48,7 +68,7 @@ Check `isError`. If it fails, tell the user and stop — the remaining steps dep
 
 ---
 
-## Step 4 — Install bundled templates
+## Step 5 — Install bundled templates
 
 The plugin ships two starter templates at the plugin root (two levels up from this SKILL.md, e.g. `marp/templates/`):
 - `marp-default-minimal.md` — minimal CSS + 2 slides, for quick starts
@@ -58,9 +78,9 @@ For each bundled template:
 
 **4a.** Read the file content from the plugin's `templates/` folder.
 
-**4b.** Call `mcp__flashquery-core__create_document`:
+**4b.** Call `mcp__flashquery__create_document`:
 ```
-mcp__flashquery-core__create_document({
+mcp__flashquery__create_document({
   title: "MARP Template — Default Minimal",   // or "Default Scaffold"
   content: "<file content>",
   path: "<templates_folder>/marp-default-minimal.md",  // or marp-default-scaffold.md
@@ -69,19 +89,19 @@ mcp__flashquery-core__create_document({
 })
 ```
 
-**4c.** Check `isError`. If a document already exists at that path, ask the user whether to overwrite (use `mcp__flashquery-core__update_document`) or skip.
+**4c.** Check `isError`. If a document already exists at that path, ask the user whether to overwrite (use `mcp__flashquery__update_document`) or skip.
 
 **4d.** Parse `fqc_id` from each successful response.
 
 ---
 
-## Step 5 — Register template memories
+## Step 6 — Register template memories
 
-For each installed template, call `mcp__flashquery-core__save_memory`:
+For each installed template, call `mcp__flashquery__save_memory`:
 
 **Minimal template:**
 ```
-mcp__flashquery-core__save_memory({
+mcp__flashquery__save_memory({
   content: "[marp_template] name: Default Minimal — fqc_id: <uuid> — path: <templates_folder>/marp-default-minimal.md — use_for: general presentations, quick start, no specific brand, simple structure, minimal slides",
   tags: ["marp-config", "marp-template"]
 })
@@ -89,7 +109,7 @@ mcp__flashquery-core__save_memory({
 
 **Scaffold template:**
 ```
-mcp__flashquery-core__save_memory({
+mcp__flashquery__save_memory({
   content: "[marp_template] name: Default Scaffold — fqc_id: <uuid> — path: <templates_folder>/marp-default-scaffold.md — use_for: general presentations, full structure, agenda, multiple sections, title slide, closing slide, team presentations",
   tags: ["marp-config", "marp-template"]
 })
@@ -97,13 +117,13 @@ mcp__flashquery-core__save_memory({
 
 ---
 
-## Step 6 — Confirm and guide next steps
+## Step 7 — Confirm and guide next steps
 
 Tell the user:
 - The presentations folder and templates folder that were configured
 - Which templates were installed and where
-- That they can run `/marp-save-template` to register additional branded templates (e.g., for specific products, companies, or event types)
-- That running `/marp-configure` again is safe — it will update the config memory and offer to overwrite or skip existing templates
+- That they can run `/marp:save-template` to register additional branded templates (e.g., for specific products, companies, or event types)
+- That running `/marp:configure` again is safe — it will update the config memory and offer to overwrite or skip existing templates
 
 ---
 
