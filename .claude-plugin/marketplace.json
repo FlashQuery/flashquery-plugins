@@ -37,6 +37,12 @@
       "description": "Save and restore conversation context across Claude sessions using FlashQuery's vault.",
       "version": "1.0.0",
       "source": "./apps/context-manager"
+    },
+    {
+      "name": "marp",
+      "description": "Create and manage beautiful MARP presentation decks — SVG charts, dashboard components, dark/light themes, stored in your FlashQuery vault.",
+      "version": "1.0.0",
+      "source": "./apps/marp"
     }
   ]
 }
