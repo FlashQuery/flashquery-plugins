@@ -6,7 +6,7 @@ type: spark
 
 ## Related
 
-{{Vault documents this spark connects to — other sparks, research notes, specs, or anything elsewhere in the FQC vault. [[Document Title]]}}
+{{Vault documents this spark connects to — other sparks, research notes, specs, or anything elsewhere in the FlashQuery vault. [[Document Title]]}}
 
 ## Sources
 

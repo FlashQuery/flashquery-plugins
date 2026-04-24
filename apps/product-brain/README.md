@@ -5,17 +5,17 @@ version: 0.1.0
 
 # Product Brain
 
-A product knowledge management plugin for FlashQuery Core. Capture fragments, research, feature specs, and work items through conversation — the plugin handles filing, tagging, connection-surfacing, and periodic review.
+A product knowledge management plugin for FlashQuery. Capture fragments, research, feature specs, and work items through conversation — the plugin handles filing, tagging, connection-surfacing, and periodic review.
 
 ## What it does
 
 Product Brain gives you a structured vault for product thinking, organized around **projects**. Each project has an inbox for quick captures, folders for research notes, feature specs, and work items, and a daily log for continuity across sessions. An AI assistant routes content to the right place, surfaces connections between fragments, and synthesizes what you've accumulated into briefs on demand.
 
-The plugin uses FlashQuery Core's three-layer storage model: Markdown documents in the vault (readable in Obsidian or any editor), structured database records for fast querying, and memories for ambient intelligence.
+The plugin uses FlashQuery's three-layer storage model: Markdown documents in the vault (readable in Obsidian or any editor), structured database records for fast querying, and memories for ambient intelligence.
 
 ## Skills
 
-The plugin includes 12 user-facing skills, organized by purpose:
+The plugin includes 13 user-facing skills, organized by purpose:
 
 ### Getting started
 
@@ -43,18 +43,7 @@ The plugin includes 12 user-facing skills, organized by purpose:
 | `draft` | Turn accumulated research into a feature spec |
 | `review-loop` | Process inbox items, route sparks, check open questions, surface connections |
 | `organize` | Large-scale cleanup — triage backlogs, migrate notes, periodic housekeeping |
-
-## Callback handlers
-
-Three system-level handlers manage vault changes that happen outside skill invocations:
-
-| Callback | Purpose |
-|----------|---------|
-| `on_document_discovered` | Routes new vault documents to the correct project, auto-registers templates |
-| `on_document_changed` | Syncs database when files are edited externally (frontmatter, open questions, timestamps) |
-| `on_document_deleted` | Soft-deletes database records, preserves provenance chains |
-
-Callback specifications are in `references/callbacks/`.
+| `scan` | Pick up files added to the vault outside of a conversation — registers and routes them |
 
 ## Reference files
 

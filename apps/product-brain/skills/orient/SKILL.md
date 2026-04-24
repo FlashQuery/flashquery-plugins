@@ -86,11 +86,7 @@ Call `search_records` with:
 - `filters`: `{ "status": "active", "has_open_questions": true }`
 - `limit`: 10
 
-This finds research notes with unresolved open questions — the most actionable items.
-
-Also query for recently updated active documents:
-- `filters`: `{ "status": "active" }`
-- sorted by `updated_at` descending, `limit`: 5
+This finds research notes with unresolved open questions — the most actionable items for the brief.
 
 ### 5. Check for flagged items
 

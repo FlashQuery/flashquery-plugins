@@ -117,9 +117,7 @@ Extract the `fqc_id` from the `create_document` response, then call `create_reco
     "project_id": "<project_id from step 1>",
     "document_type": "<inferred type>",
     "status": "active",
-    "has_open_questions": <true if research_note with open questions, false otherwise>,
-    "created_at": "<current ISO timestamp>",
-    "updated_at": "<current ISO timestamp>"
+    "has_open_questions": <true if research_note with open questions, false otherwise>
   }
   ```
 
@@ -130,7 +128,7 @@ Read the tag vocabulary via `get_document` with the identifier for the tags file
 Select appropriate tags from the vocabulary based on the content. Choose tags that will help the user find this document later — typically one or two from the Classification group and optionally one from Workflow or Source.
 
 Call `apply_tags` with:
-- `identifier`: the `fqc_id` of the new document
+- `identifiers`: the `fqc_id` of the new document
 - `add_tags`: the selected tags
 
 If the content clearly calls for a tag that doesn't exist in the vocabulary, create it — but note this explicitly: "I've tagged this with `#api-design` — want me to add it to the tag vocabulary?" If the user confirms, append the new tag to `_plugin/tags.md` via `append_to_doc`.
@@ -144,13 +142,12 @@ If the user provides additional context, update the document:
 - For research notes: `replace_doc_section` to update the Summary or add to Open Questions
 - For work items: `replace_doc_section` to flesh out Description or Context
 
-Update `prodbrain_documents.updated_at` via `update_record` if the document was modified.
+If additional context changed `has_open_questions` (e.g., the user described open questions in a research note), call `update_record` to sync that field.
 
 ### 7. Surface connections (Beat 3)
 
 Call `search_all` with:
 - `query`: a semantic search based on the core idea of what was captured
-- `type`: `"all"` (searches both documents and memories)
 
 Review the results for genuinely relevant connections — not just keyword overlap, but conceptual relevance. Present the strongest 1-3 connections to the user with a brief explanation of why each seems related.
 
@@ -158,8 +155,8 @@ If the user confirms a connection, write the dual link:
 
 **Navigation layer** — call `insert_doc_link` with:
 - `identifier`: the `fqc_id` of whichever document should contain the link
-- `target_doc`: the title or fqc_id of the linked document
-- `anchor_section`: `"Sources"` or `"Related"` depending on the relationship
+- `target`: the title or fqc_id of the linked document
+- `property`: `"links"`, `"related"`, or another frontmatter property depending on the relationship
 
 Convention for Sources vs. Related:
 - **Sources** — directional, meaning "this document was informed by that one." Use when the new capture was derived from or inspired by existing content.
@@ -172,8 +169,7 @@ Convention for Sources vs. Related:
   ```json
   {
     "source_fqc_id": "<the origin document>",
-    "derived_fqc_id": "<the document that was informed>",
-    "created_at": "<current ISO timestamp>"
+    "derived_fqc_id": "<the document that was informed>"
   }
   ```
 

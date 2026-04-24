@@ -57,9 +57,9 @@ Call `update_record` with:
 
 Call `update_doc_header` with:
 - `identifier`: the `fqc_id` of the target document
-- `frontmatter_updates`: `{ "status": "<new status>" }`
+- `updates`: `{ "status": "<new status>" }`
 
-This keeps the file and database in sync. The `on_document_changed` callback would catch this too, but writing both together is cleaner.
+This keeps the vault file and database record in sync.
 
 ### 4. Confirm
 

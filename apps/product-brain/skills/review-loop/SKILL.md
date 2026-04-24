@@ -37,7 +37,7 @@ Call `search_memory` with:
 
 Retrieve the vault root, active project, and folder paths.
 
-Check for external file additions by calling `force_file_scan`. This triggers `on_document_discovered` for any files added to the vault outside a skill invocation, ensuring `prodbrain_documents` is up to date before processing.
+Check for external file additions by calling `force_file_scan`. This updates the database index for any files added, moved, or deleted outside a skill invocation, ensuring `prodbrain_documents` is up to date before processing.
 
 ### 2. Determine what to process
 
@@ -79,9 +79,9 @@ c. If the spark answers an open question, update the Open Questions section via 
 
 d. Write provenance (dual-write):
    - Call `create_record` on `provenance` with `source_fqc_id` = spark, `derived_fqc_id` = research note
-   - Call `insert_doc_link` to add `[[spark title]]` to the research note's Sources section
+   - Call `insert_doc_link` with `identifier` = research note fqc_id, `target` = spark fqc_id, `property` = `"links"` to add the link to the research note's frontmatter
 
-e. Update the spark's status: call `update_record` on `documents` to set `status: "archived"`, then call `archive_record` to archive the spark record.
+e. Archive the spark: call `archive_document` with `identifiers` = spark fqc_id to archive the vault file, then call `archive_record` with `plugin_id: "product-brain"`, `table: "documents"`, `id` = spark record id to archive the database record.
 
 **Promote to a new document** — when the spark deserves its own document:
 

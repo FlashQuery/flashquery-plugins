@@ -27,7 +27,7 @@ The rest of this skill focuses on project creation. Lifecycle operations are des
 
 ## Why projects must be created through this skill
 
-FQC tracks files, not folders. An empty folder created directly on the filesystem is invisible to the scanner. More importantly, the `on_document_discovered` callback routes incoming documents by matching their path against `prodbrain_projects` entries. A folder with no corresponding database record means documents placed there won't be attributed to any project — they become orphans. This skill is the only path that creates both the folder and the database record as a single intentional operation.
+All skills that capture or route documents — Capture, Review Loop, Orient — look up the active project by reading `prodbrain_projects` records. A folder with no corresponding database record means documents placed there can't be attributed to any project. This skill is the only path that creates both the database record and the folder structure as a single intentional operation.
 
 ## Creating a new project
 
@@ -35,7 +35,7 @@ FQC tracks files, not folders. An empty folder created directly on the filesyste
 
 Have a brief conversation with the user to establish:
 
-**1. Project name** (required) — the display name for this project (e.g., "FlashQuery Core", "Client Portal", "Marketing Site"). This is how the project appears in Orient briefs and skill output.
+**1. Project name** (required) — the display name for this project (e.g., "FlashQuery", "Client Portal", "Marketing Site"). This is how the project appears in Orient briefs and skill output.
 
 **2. Project path** (required) — the folder name within the vault root (e.g., `flashquery/`, `client-portal/`). Suggest a kebab-case version of the project name as the default. The user should confirm or override.
 
@@ -73,26 +73,106 @@ Call `create_record` with:
 
 Save the returned record ID — this is the `project_id` for all documents in this project.
 
-#### 3. Create the folder hierarchy
+#### 3. Create a welcome spark in the inbox
 
-Create all four project subfolders via `create_directory`:
+The research, specs, and work folders are created automatically by FlashQuery the first time a document is written into them. The inbox folder needs at least one document to exist, so create a welcome spark now.
 
-- `{vault_root}/{project_path}/inbox/`
-- `{vault_root}/{project_path}/research/`
-- `{vault_root}/{project_path}/specs/`
-- `{vault_root}/{project_path}/work/`
+Call `create_document` with:
+- `title`: `Welcome to {project_name}`
+- `path`: `{vault_root}/{project_path}/inbox/`
+- `content`: a spark-format welcome note (frontmatter `type: spark`, brief body explaining this is the project inbox)
 
-These empty folders are immediately visible in Obsidian and ready for documents. No placeholder files are needed — the `prodbrain_projects` record from step 2 is what makes routing work.
+Then register the welcome spark in `prodbrain_documents` via `create_record` (same fields as described in Init step 5d). The project `prodbrain_projects` record from step 2 is what makes routing work across all skills — folders appear in Obsidian as content is captured.
 
-**No schema re-registration is needed.** Project folders created after Init are intentionally not declared in the schema. When a document lands in a new project folder, the `on_document_discovered` callback's `asserted_ownership` will be empty (folder unknown to the schema), and the callback falls through to its DB-lookup path: it reads `prodbrain_projects` via `search_records`, matches the document path against registered `project_path` values, and routes correctly. The database record is what makes routing work — not a schema entry.
 
-#### 4. Update configuration memory
+#### 4. Update the registered schema
+
+For FlashQuery to auto-track files dropped into the new project's folders outside a conversation, the plugin schema must declare those folders as `documents.types` entries. Re-register the plugin with a fully updated schema that includes all existing projects plus the new one.
+
+a. Read the base schema from `references/schema.yaml` (in the plugin root — navigate two directory levels up from this SKILL.md).
+
+b. Call `search_records` to get all active projects — including the one just created in step 2:
+
+```
+mcp__flashquery__search_records({
+  plugin_id: "product-brain",
+  table: "projects",
+  filters: { status: "active" }
+})
+```
+
+c. Construct the complete `documents.types` section. Start with the `_plugin/templates` and `_plugin/feedback` entries from the base schema. Then, for each active project, append four entries. Derive the project slug from `project_path` by stripping the vault root prefix and trailing slash (e.g., `"product-brain/client-portal/"` → slug `"client-portal"`). Pattern for each project:
+
+```yaml
+    - id: {slug}-inbox
+      folder: {vault_root}/{project_path}/inbox
+      description: "Inbox for {Project Name} — sparks land here"
+      on_added: auto-track
+      track_as: documents
+      template: spark.md
+      field_map:
+        type: document_type
+        status: status
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+
+    - id: {slug}-research
+      folder: {vault_root}/{project_path}/research
+      description: "Research notes for {Project Name}"
+      on_added: auto-track
+      track_as: documents
+      template: research-note.md
+      field_map:
+        type: document_type
+        status: status
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+
+    - id: {slug}-specs
+      folder: {vault_root}/{project_path}/specs
+      description: "Feature specs for {Project Name}"
+      on_added: auto-track
+      track_as: documents
+      template: feature-spec.md
+      field_map:
+        type: document_type
+        status: status
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+
+    - id: {slug}-work
+      folder: {vault_root}/{project_path}/work
+      description: "Work items for {Project Name}"
+      on_added: auto-track
+      track_as: documents
+      template: work-item.md
+      field_map:
+        type: document_type
+        status: status
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+```
+
+Repeat for every active project returned in step b.
+
+d. Produce the full schema YAML by combining the base content (tables + `_plugin/` document type entries) with all project folder entries from step c.
+
+e. Call `register_plugin` with:
+   - `schema_yaml`: the full updated schema YAML string
+
+   Registration is idempotent — existing tables and previously-declared folder entries are preserved. Only new entries are added.
+
+#### 5. Update configuration memory
 
 Call `search_memory` with `query: "product-brain-config"` and `tags: ["product-brain-config"]` to find the existing configuration memory. Then call `update_memory` with the existing `memory_id` and updated content that includes the new project in the active projects list.
 
 If `update_memory` is not available, call `save_memory` with updated content and archive the old memory.
 
-#### 7. Confirm and offer next step
+#### 6. Confirm and offer next step
 
 Tell the user:
 - The project was created with its name and folder path

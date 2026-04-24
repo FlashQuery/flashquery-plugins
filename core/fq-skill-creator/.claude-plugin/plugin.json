@@ -1,6 +1,6 @@
 {
   "name": "fq-skill-creator",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Meta-skill for creating new Claude skills that use FlashQuery MCP tools for document storage, search, memory, and data management.",
   "author": {
     "name": "FlashQuery"

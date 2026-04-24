@@ -58,6 +58,7 @@ Present the skills in natural language, grouped by what the user might want to d
 **Maintain and organize:**
 - **Review Loop** — process what's accumulated: route inbox items, do cursory research, surface connections.
 - **Organize** — thorough cleanup pass: route misplaced items, consolidate, archive stale content.
+- **Scan** — pick up files dropped into the vault from Finder or a terminal — registers and routes them without a full review pass.
 
 **Manage projects:**
 - **Add Project** — create a new project, list projects, switch active project, archive a project.

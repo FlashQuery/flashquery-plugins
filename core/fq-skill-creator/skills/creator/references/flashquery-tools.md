@@ -1112,18 +1112,54 @@ mcp__flashquery__remove_directory({
 
 ### clear_pending_reviews
 
-Query or clear pending review items for a plugin. Call with no parameters (or empty `fqc_ids`) to see what's pending. Call with `fqc_ids` populated to clear specific items. Idempotent — non-existent IDs are silently ignored.
+Query or clear pending review items from the `fqc_pending_plugin_review` table for a plugin. This is the primary mechanism for **pull-based document processing** — instead of push callbacks, FlashQuery populates a work queue when it auto-tracks new files or resurrects archived ones, and skills (typically run on a schedule via `/loop` or cron) query the queue, process the items, and clear them.
+
+Call with empty `fqc_ids` (or no parameters) to **query** what's pending without deleting anything. Call with `fqc_ids` populated to **clear** those items and return what remains. The response shape is always the same: the current pending list for the plugin after any clearing.
+
+This tool replaces the old `on_document_discovered` push callback pattern. Skills are now triggered on a schedule and pull from this queue rather than being invoked reactively per-file.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `plugin_id` | string | no | Plugin identifier. Omit to query across all plugins. |
+| `plugin_id` | string | no | Plugin identifier. Omit to query across all plugins. Provide to scope to one plugin. |
 | `plugin_instance` | string | no | Plugin instance identifier. Default: "default" |
-| `fqc_ids` | string[] | no | Document IDs to clear. Empty array or omitted = query mode (list pending items without deleting). |
+| `fqc_ids` | string[] | no | Document IDs to clear. Empty array or omitted = query mode (list pending items without deleting). Non-empty = clear matching rows, then return what remains. |
 
-**Returns:** Pending items list (in query mode) or before-and-after counts (in clear mode).
+**Returns:** The current list of pending review items for the plugin (after clearing, if any). Each item includes:
+- `fqc_id` — the document's UUID (use with `get_document` to read content)
+- `table_name` — which plugin table the auto-tracked row lives in (e.g., `'contacts'`)
+- `review_type` — why this item was queued: `'template_available'`, `'new_document'`, `'resurrected'`, or `'custom'`
+- `context` — JSONB metadata for the skill to act on (e.g., `{ "template": "contact_note.md", "type_id": "crm-contacts" }`)
 
-**Example — query what's pending:**
+**When items are queued (automatically by FlashQuery during reconciliation):**
+- `on_added: auto-track` fires and the `documents.types` entry declares a `template` → `review_type: 'template_available'`
+- `on_added: auto-track` fires with no template but the plugin opts into new-document review → `review_type: 'new_document'`
+- An archived plugin row is resurrected (document reappeared in vault) → `review_type: 'resurrected'`
+
+Pending items are also surfaced **passively** in every record tool response — so an in-conversation skill can see them too. But `clear_pending_reviews` is the dedicated entry point for scheduled skills that don't need to make a real record tool call just to check for work.
+
+**Expected calling pattern for a scheduled skill:**
+
+```
+Step 1 — Query what's pending:
+clear_pending_reviews({ plugin_id: "crm", fqc_ids: [] })
+→ returns list of items with fqc_id, table_name, review_type, context
+
+Step 2 — Process each item:
+  - get_document({ identifier: item.fqc_id }) to read content
+  - Apply template, classify, enrich, route, or take "no action needed"
+  - Use move_document, update_document, apply_tags, etc. as needed
+
+Step 3 — Clear what was processed:
+clear_pending_reviews({ plugin_id: "crm", fqc_ids: [processed_id_1, processed_id_2, ...] })
+→ returns remaining pending items (if any)
+
+Step 4 — If items remain, the next scheduled invocation picks them up (incremental batching)
+```
+
+"No action needed" is a valid reason to clear — if a document doesn't need processing, clear it anyway so it doesn't pile up.
+
+**Example — query what's pending (all plugins):**
 ```
 mcp__flashquery__clear_pending_reviews({})
 ```
@@ -1135,10 +1171,15 @@ mcp__flashquery__clear_pending_reviews({
 })
 ```
 
-**Example — clear specific items:**
+**Example — clear processed items and confirm what remains:**
 ```
 mcp__flashquery__clear_pending_reviews({
   plugin_id: "crm",
   fqc_ids: ["a1b2c3d4-...", "e5f6g7h8-..."]
 })
 ```
+
+**Usage notes:**
+- Clearing an `fqc_id` that doesn't exist in the queue is a silent no-op — safe to pass all processed IDs.
+- The response shape is always the current pending list, regardless of whether you're querying or clearing.
+- Clearing with the full list of IDs you processed and getting back an empty list confirms all work is done.

@@ -21,6 +21,7 @@ Before writing anything, clarify with the user:
 2. What kind of data the skill needs to work with — documents, memories, structured records, or a mix
 3. Whether the skill needs its own plugin schema (structured records with custom tables) or can use the core document and memory tools directly
 4. What search patterns matter — keyword, semantic, tag-filtered, cross-resource
+5. **Does the skill need to automatically discover and process files dropped into vault folders outside of a conversation?** If yes, the skill needs a `documents.types` entry with `on_added: auto-track` in its plugin schema, and a pull-based processing loop using `clear_pending_reviews` on a schedule. This is a distinct architecture from skills that only respond to in-conversation requests.
 
 ### Step 2: Identify which FlashQuery tools the skill needs
 
@@ -40,6 +41,9 @@ Use `search_all` for unified document + memory search
 
 **The skill needs to organize content (tagging, linking, archiving)?**
 Use Compound tools: `apply_tags`, `insert_doc_link`, `archive_document`, `archive_memory`
+
+**The skill needs to watch vault folders for new files and process them periodically (template application, classification, routing)?**
+Use `clear_pending_reviews` on a `/loop` or scheduled cron. Set up the plugin schema with `documents.types` entries and `on_added: auto-track` so FlashQuery auto-discovers files mechanically. The skill then queries the pending review queue, processes each item, and clears it. See "Building a pull-based document processing skill" below, and read [references/example-pull-processor.md](references/example-pull-processor.md) for a complete annotated schema YAML and skill composition guide.
 
 ### Step 3: Write the skill using the FlashQuery tool reference
 
@@ -186,7 +190,10 @@ If the skill manages structured records (not just documents and memories), it ne
 2. The skill body should instruct the model to call `register_plugin` with either `schema_path` or `schema_yaml` on first use
 3. After registration, the skill uses `create_record`, `get_record`, `update_record`, `search_records`, and `archive_record` with the `plugin_id` and `table` name
 
-Example YAML schema structure (tables and columns are arrays, not maps):
+### Basic schema (records only)
+
+For a plugin that manages structured records without watching folders:
+
 ```yaml
 id: my-skill-plugin
 name: My Skill Plugin
@@ -212,12 +219,216 @@ tables:
         description: Additional notes
 ```
 
-Key schema rules:
+### Schema with document tracking (documents.types)
+
+If the skill also watches vault folders and needs to track documents automatically, add a `documents.types` section alongside `tables`. This enables the **reconcile-on-read** pattern: FlashQuery discovers new files in declared folders and handles data integrity mechanically, while the skill processes pending items via `clear_pending_reviews`.
+
+**Single-folder example:**
+
+```yaml
+id: my-skill-plugin
+name: My Skill Plugin
+version: "1.0"
+
+documents:
+  types:
+    - id: my-plugin-items
+      folder: MyPlugin/Items          # vault-relative folder to watch
+      access: read-write              # read-write (default) or read-only
+      on_added: auto-track            # auto-track or ignore (default)
+      track_as: items                 # which plugin table to create a row in
+      template: item_template.md      # optional: template filename for Claude to apply
+      field_map:                      # frontmatter field → plugin table column
+        title: name
+        tags: tags
+      on_moved: keep-tracking         # keep-tracking (default) or untrack
+      on_modified: sync-fields        # sync-fields or ignore (default)
+
+tables:
+  - name: items
+    embed_fields:
+      - name
+    columns:
+      - name: name
+        type: text
+        required: true
+        description: Item name (mapped from document title)
+      - name: fqc_id
+        type: uuid
+        required: true
+        description: Reference to the associated fqc_documents row
+      - name: last_seen_updated_at
+        type: timestamptz
+        description: When reconciliation last saw this document (used for modified detection)
+      - name: tags
+        type: text
+        description: Tags synced from document frontmatter
+```
+
+**Multi-folder example** (different folders routing to different tables — the common CRM-style pattern):
+
+```yaml
+id: crm
+name: CRM Plugin
+version: "1.0"
+
+documents:
+  types:
+    - id: crm-contacts
+      folder: CRM/Contacts
+      on_added: auto-track
+      track_as: contacts              # new files here → contacts table
+      template: contact_note.md
+      field_map:
+        title: name
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+
+    - id: crm-companies
+      folder: CRM/Companies
+      on_added: auto-track
+      track_as: companies             # new files here → companies table
+      template: company_profile.md
+      field_map:
+        title: name
+        tags: tags
+      on_moved: keep-tracking
+      on_modified: sync-fields
+
+    - id: crm-inbox
+      folder: CRM/Inbox
+      on_added: auto-track
+      track_as: inbox_items           # new files here → inbox_items table
+      field_map:
+        title: name
+      on_moved: untrack               # if moved out of inbox, it was dealt with
+      on_modified: ignore
+
+tables:
+  - name: contacts
+    embed_fields: [name]
+    columns:
+      - name: name
+        type: text
+        required: true
+      - name: fqc_id
+        type: uuid
+        required: true
+      - name: last_seen_updated_at
+        type: timestamptz
+      - name: tags
+        type: text
+
+  - name: companies
+    embed_fields: [name]
+    columns:
+      - name: name
+        type: text
+        required: true
+      - name: fqc_id
+        type: uuid
+        required: true
+      - name: last_seen_updated_at
+        type: timestamptz
+
+  - name: inbox_items
+    columns:
+      - name: name
+        type: text
+        required: true
+      - name: fqc_id
+        type: uuid
+        required: true
+```
+
+The reconciler routes new files to the right table based on which folder they land in. A file moved between watched folders (e.g., from `CRM/Inbox` to `CRM/Contacts`) will untrack from `inbox_items` (per `on_moved: untrack`) and auto-track into `contacts` on the next reconciliation.
+
+### documents.types policy reference
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `id` | string | Unique type identifier (e.g., `crm-contacts`). Used in `fqc_type` frontmatter and the global type registry. |
+| `folder` | string | Vault-relative folder path to watch (e.g., `CRM/Contacts`). The folder implies intent — once a document is associated, frontmatter (`fqc_owner`/`fqc_type`) is the source of truth, not the folder. |
+| `access` | `read-write` (default), `read-only` | Whether the plugin intends to modify documents in this folder. `read-only` causes a warning if the skill tries to write. Does not affect mechanical FQC operations (frontmatter writes during auto-track are always permitted). |
+| `on_added` | `ignore` (default), `auto-track` | What happens when a genuinely new file appears in the folder (no existing plugin row for its `fqc_id`). `auto-track`: FlashQuery creates the plugin table row, writes `fqc_owner`/`fqc_type` to the document's frontmatter, populates columns via `field_map`, and inserts a pending review row if `template` is declared. Requires `track_as`. `ignore`: file is visible in `fqc_documents` but the plugin doesn't track it. |
+| `track_as` | plugin table name | Which plugin table to insert into when auto-tracking. Must match a `tables` entry. Required when `on_added: auto-track`. |
+| `template` | filename string | A template hint for the plugin's skill. FlashQuery stores this as metadata and surfaces it in pending review rows (`review_type: 'template_available'`, `context.template` contains this filename). The skill (not FlashQuery) reads, applies, and merges the template with the document. The template file's location is entirely the skill's domain — put it in the skill's `references/` or `assets/` directory and reference it by path in the skill instructions. FlashQuery never reads the template file; it only stores the name as a routing hint. Optional. |
+| `field_map` | object (frontmatter key → column name) | Maps frontmatter fields to plugin table columns. Applied during auto-track (initial population), sync-fields (on modification), and resurrection (re-sync after return). If a mapped field is absent from the document, the column is set to NULL. |
+| `on_moved` | `keep-tracking` (default), `untrack` | What happens when a tracked document moves outside this folder (frontmatter association still intact). `keep-tracking`: update the stored path, keep tracking. `untrack` (also `stop-tracking`): archive the plugin row (resurrectable later). Note: `ignore` is not a valid value — both options produce a stable end state so the reconciler converges. |
+| `on_modified` | `ignore` (default), `sync-fields` | What happens when a tracked document's `updated_at` or content hash changes. `sync-fields`: re-read frontmatter, re-apply `field_map`, update `last_seen_updated_at`. `ignore`: only updates `last_seen_updated_at` (prevents re-flagging on every cycle). |
+
+**Always-mechanical responses** (no policy field needed — FlashQuery always handles these):
+- `deleted`: document is `missing` or `archived` → plugin row is archived
+- `disassociated`: user removed `fqc_owner`/`fqc_type` from frontmatter → plugin row is archived
+- `resurrected`: archived plugin row's document came back to `active` → row is un-archived, path updated, `field_map` re-applied (template never re-applied)
+
+### Key schema rules
 - `tables` is an array of objects (`- name: ...`), not a map
 - `columns` is an array of objects (`- name: ...`), not a map
 - Column `type` must be one of: `text`, `integer`, `boolean`, `uuid`, `timestamptz`
 - Use `embed_fields` (array of column names) at the table level to enable semantic search — there is no separate `search:` block
 - Plugin metadata (`id`, `name`, `version`) can be at root level or nested under `plugin:`
+- FlashQuery automatically adds `id`, `instance_id`, `status`, `created_at`, `updated_at` to every plugin table — do not redefine these
+- Document-tracking tables should include `fqc_id` (uuid) as a foreign key to `fqc_documents`, and `last_seen_updated_at` (timestamptz) for modification detection
+
+## Building a pull-based document processing skill
+
+When a skill needs to watch folders and process new files (apply templates, classify documents, route to the right location), use the pull-based pattern rather than push callbacks:
+
+**Architecture overview:**
+
+1. The plugin schema declares `documents.types` entries with `on_added: auto-track`
+2. The user drops a file into a watched folder (outside any conversation)
+3. A **scanner run** (`force_file_scan`) picks up the file and registers it in `fqc_documents`
+4. A **record tool call** (any of: `search_records`, `create_record`, `get_record`, `update_record`, `archive_record`) triggers `reconcilePluginDocuments()` internally — this detects the new `fqc_documents` entry, auto-tracks it (creates the plugin row, writes `fqc_owner`/`fqc_type` frontmatter), and inserts a pending review row into `fqc_pending_plugin_review`
+5. The skill (running on `/loop` or scheduled cron) calls `clear_pending_reviews` to read the queue, processes each item (applies template, classifies, routes), then clears the processed IDs
+
+**Critical dependency:** `clear_pending_reviews` reads the `fqc_pending_plugin_review` table but does **not** itself trigger a vault scan or reconciliation. Pending items only appear in that table after steps 3 and 4 have both run. A scheduled skill that calls `clear_pending_reviews` cold (without first scanning and reconciling) will find nothing if no in-conversation record tool call happened between the file drop and the scheduled run. The fix: always call `force_file_scan` and then a record tool before querying pending reviews.
+
+This is the replacement for the old `on_document_discovered` push callback pattern. Data integrity (row creation, frontmatter writes, field sync) is always mechanical. The skill only handles the AI-requiring tasks: template application, content classification, and routing decisions.
+
+**Also: frontmatter-based discovery.** If a file is dropped into a *non-watched* folder but its YAML frontmatter includes `fqc_type: my-plugin-items`, FlashQuery's reconciler will still auto-track it — it looks up the type in the global type registry and applies the matching policy. The skill instructions can mention this as a fallback for users who want to pre-declare types in their documents.
+
+**Typical skill structure for a pull-based processor:**
+
+```markdown
+## Processing pending documents
+
+This skill runs on a schedule (via /loop or cron). On each invocation:
+
+1. Sync the vault — call `force_file_scan({})` to pick up any files dropped since the last run.
+
+2. Trigger reconciliation — call `search_records({ plugin_id: "my-plugin", table: "items" })`
+   with a minimal query (limit: 1 is fine). This causes FlashQuery to diff the watched folders
+   against fqc_documents, auto-track any new files, and insert pending review rows.
+   The response will also surface any pending items inline.
+
+3. Query the pending queue — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: [] })`.
+   If the response lists no pending items, do nothing and exit.
+
+4. For each pending item (process in batches of 5–10):
+   - Call `get_document({ identifier: item.fqc_id })` to read the document content
+   - Check `item.review_type`:
+     - `template_available`: load the template from `item.context.template`
+       (find it in the skill's references/ or assets/ directory), merge it with the
+       document's existing content, write back with `update_document`
+     - `new_document`: classify and route the document — move to appropriate folder,
+       apply tags, update plugin record fields via `update_record`
+     - `resurrected`: verify the document is still valid, update any stale fields
+   - If no action is needed (document already structured), clear it anyway
+
+5. Clear processed items — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: [processed_ids] })`
+   to remove them from the queue and confirm what remains.
+
+6. If items remain, the next scheduled invocation picks them up (incremental batching).
+```
+
+**When to use `/loop` vs scheduled cron:**
+- Use `/loop` during development and testing — triggers on demand within a session
+- Use a scheduled cron (via `/schedule`) for production — runs even when no conversation is active, which is the key advantage of pull-based processing over push callbacks
+
+**Pending review items are also surfaced passively:** Every time a record tool is called for the plugin, the response includes a "Pending review" note. An in-conversation skill can therefore act on pending items immediately, without a separate processing loop — step 2 above doubles as the reconcile-and-surface call. The `/loop` or cron is only needed when processing should happen independently of user-initiated conversations.
 
 ## Completing the workflow
 
