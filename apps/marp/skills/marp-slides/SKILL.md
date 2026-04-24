@@ -12,6 +12,12 @@ updated: 2026-04-24
 - VS Code settings: `markdown.marp.enableHtml: true` + `markdown.marp.allowLocalFiles: true`
 - Export: `npx @marp-team/marp-cli slides.md --pdf --allow-local-files`
 
+**SVG and inline HTML require two things to render correctly — both must be present:**
+1. VS Code setting `markdown.marp.enableHtml: true` (controls the preview pane)
+2. `html: true` in the slide document's YAML frontmatter (controls CLI export and acts as a second gate in preview)
+
+Without `html: true` in the frontmatter, `<svg>` and other HTML tags render as escaped literal text at the top of slides. Always include it when generating a deck.
+
 ---
 
 ## FlashQuery Integration
@@ -97,8 +103,8 @@ mcp__flashquery-core__create_document({
   title: "<deck title>",
   content: "<full marp markdown>",
   path: "<vault-relative path>",
-  tags: ["#marp"],
-  frontmatter: { marp: true, status: "draft" }
+  tags: ["#marp", "#status/draft"],
+  frontmatter: { marp: true, html: true }
 })
 ```
 
