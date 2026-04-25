@@ -27,6 +27,7 @@ These tools all preserve data in one way or another — moves keep the fqc_id, c
 |------|---------|-------------------|
 | `move_document` | Rename/relocate a document | Yes — identity preserved |
 | `copy_document` | Duplicate a document as a starting point | No — copy gets a new fqc_id |
+| `create_directory` | Create a new directory (with intermediate paths) in the vault | n/a |
 | `remove_directory` | Safely remove an **empty** directory | n/a |
 | `reconcile_documents` | Resync the DB against the vault after external file changes | Yes — detects moves via fqc_id |
 | `force_file_scan` | Manually trigger the file scanner | n/a |
@@ -125,6 +126,33 @@ copy_document(identifier: "templates/proposal.md", destination: "clients/beta/pr
 // then:
 update_doc_header(identifier: "clients/beta/proposal.md", updates: { client: "Beta", title: "Beta Proposal" })
 ```
+
+---
+
+## `create_directory` — create directories in the vault
+
+Creates one or more vault directories. Uses `mkdir -p` semantics — intermediate directories are created automatically, so `create_directory(paths: "clients/acme/2026")` creates all three levels in a single call even if none exist yet.
+
+```
+create_directory(paths: "clients/acme/2026")
+```
+
+**Batch creation with a shared root:**
+```
+create_directory(
+  paths: ["contacts", "companies", "interactions"],
+  root_path: "CRM"
+)
+```
+
+### Behavior to relay
+
+- **Idempotent.** Calling on a directory that already exists succeeds — noted in the response as "already exists," not treated as an error. No confirmation needed before executing.
+- **`paths` is the parameter name** (plural) — accepts a single string or an array of strings. `root_path` is an optional vault-relative base prefix (default: vault root).
+- **Intermediate directories created automatically.** Deep paths like `"a/b/c/d"` create all missing levels.
+- **Illegal filesystem characters sanitized.** Segments with invalid characters are cleaned (spaces substituted); the response reports what was sanitized.
+- **Absolute paths rejected.** Paths starting with `/` are rejected — all paths are vault-relative.
+- **Non-destructive.** Unlike `remove_directory`, `create_directory` cannot destroy data. No confirmation needed before running.
 
 ---
 
