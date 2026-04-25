@@ -95,7 +95,7 @@ The complete reference with all parameters and return values is in [references/f
 | `search_documents` | Search by keyword, semantic similarity, or tags |
 | `copy_document` | Duplicate a document to a new destination |
 | `move_document` | Move or rename a document to a new vault path |
-| `list_vault` | Browse vault files and directories by path with filtering by extension, date, and type |
+| `list_vault` | Browse vault files and directories by path with filtering by extensions, date, and type |
 
 ### Section and metadata editing tools
 | Tool | Purpose |
@@ -422,7 +422,7 @@ This skill runs on a schedule (via /loop or cron). On each invocation:
      - `resurrected`: verify the document is still valid, update any stale fields
    - If no action is needed (document already structured), clear it anyway
 
-5. Clear processed items — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: [processed_ids] })`
+5. Clear processed items — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: processed_ids })`
    to remove them from the queue and confirm what remains.
 
 6. If items remain, the next scheduled invocation picks them up (incremental batching).
