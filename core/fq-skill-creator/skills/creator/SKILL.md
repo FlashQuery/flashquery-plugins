@@ -28,7 +28,7 @@ Before writing anything, clarify with the user:
 Map the skill's data requirements to FlashQuery tools using this decision guide:
 
 **The skill needs to save/retrieve long-form content (notes, reports, logs, articles)?**
-Use Document tools: `create_document`, `get_document`, `update_document`, `search_documents`, `list_files`
+Use Document tools: `create_document`, `get_document`, `update_document`, `search_documents`, `list_vault`
 
 **The skill needs to remember facts, preferences, or observations across sessions?**
 Use Memory tools: `save_memory`, `search_memory`, `list_memories`, `update_memory`
@@ -41,6 +41,9 @@ Use `search_all` for unified document + memory search
 
 **The skill needs to organize content (tagging, linking, archiving)?**
 Use Compound tools: `apply_tags`, `insert_doc_link`, `archive_document`, `archive_memory`
+
+**The skill needs to create vault directories for organizing output documents?**
+Use `create_directory` — it accepts a single path string or an array of paths, creates intermediate directories automatically (`mkdir -p`), and is idempotent (calling on an existing directory succeeds without error).
 
 **The skill needs to watch vault folders for new files and process them periodically (template application, classification, routing)?**
 Use `clear_pending_reviews` on a `/loop` or scheduled cron. Set up the plugin schema with `documents.types` entries and `on_added: auto-track` so FlashQuery auto-discovers files mechanically. The skill then queries the pending review queue, processes each item, and clears it. See "Building a pull-based document processing skill" below, and read [references/example-pull-processor.md](references/example-pull-processor.md) for a complete annotated schema YAML and skill composition guide.
@@ -92,7 +95,7 @@ The complete reference with all parameters and return values is in [references/f
 | `search_documents` | Search by keyword, semantic similarity, or tags |
 | `copy_document` | Duplicate a document to a new destination |
 | `move_document` | Move or rename a document to a new vault path |
-| `list_files` | Browse vault files by directory with date/extension filtering |
+| `list_vault` | Browse vault files and directories by path with filtering by extension, date, and type |
 
 ### Section and metadata editing tools
 | Tool | Purpose |
@@ -138,6 +141,7 @@ The complete reference with all parameters and return values is in [references/f
 |------|---------|
 | `force_file_scan` | Trigger vault scan for new/moved/deleted files |
 | `reconcile_documents` | Fix database/filesystem inconsistencies |
+| `create_directory` | Create one or more directories in the vault (mkdir -p, idempotent) |
 | `remove_directory` | Remove an empty directory from the vault |
 | `clear_pending_reviews` | Query or clear pending review items |
 
