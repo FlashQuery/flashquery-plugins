@@ -73,7 +73,7 @@ list_vault(path: "clients/acme", recursive: true)
 list_vault(path: "inbox", after: "7d")
 ```
 
-**"What changed in projects/q2 between April 1 and April 15?"**
+**"What was added to projects/q2 between April 1 and April 15?"**
 ```
 list_vault(
   path: "projects/q2",
