@@ -29,7 +29,7 @@ Orchestrates document creation, modification, and memory management:
 Orchestrates search and retrieval across your vault:
 - Unified search across documents and memories (`search_all`)
 - Document-focused search with tag/keyword/semantic modes
-- File browsing by folder path and recency (`list_files`)
+- File and directory browsing by folder path and recency (`list_vault`)
 - Memory recall (semantic search + tag browsing)
 - Briefings: structured overview of a topic using tags
 
@@ -70,9 +70,9 @@ This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery in
 
 **Document tools:** `create_document`, `get_document`, `update_document`, `archive_document`, `search_documents`, `move_document`, `copy_document`, `reconcile_documents`
 
-**Compound document tools:** `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `insert_doc_link`, `apply_tags`, `get_doc_outline`, `get_briefing`, `list_files`, `search_all`
+**Compound document tools:** `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `insert_doc_link`, `apply_tags`, `get_doc_outline`, `get_briefing`, `list_vault`, `search_all`
 
-**Directory tools:** `remove_directory`
+**Directory tools:** `create_directory`, `remove_directory`
 
 **Memory tools:** `save_memory`, `search_memory`, `update_memory`, `get_memory`, `list_memories`, `archive_memory`
 
