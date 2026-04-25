@@ -151,7 +151,7 @@ mcp__flashquery__archive_document({
 
 ### search_documents
 
-Search vault documents by semantic query, tags, or text substring. Returns ranked results with title, path, fqc_id, tags, and match score. Excludes archived documents. Use this when the user asks to find, search for, or look up documents. For browsing by folder structure instead of searching, use `list_files`.
+Search vault documents by semantic query, tags, or text substring. Returns ranked results with title, path, fqc_id, tags, and match score. Excludes archived documents. Use this when the user asks to find, search for, or look up documents. For browsing by folder structure instead of searching, use `list_vault`.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -262,43 +262,59 @@ mcp__flashquery__move_document({
 
 ---
 
-### list_files
+### list_vault
 
-Browse vault files and folders by directory path. Returns file metadata including title, tags, fqc_id, and timestamps for tracked files, and filesystem metadata for untracked files. Supports recursive listing, extension filtering, and date filtering.
+Browse vault files and directories by path. Returns file metadata (title, tags, fqc_id, size, timestamps) for tracked files, and filesystem metadata for untracked files. Supports recursive listing, multi-extension filtering, date filtering on updated or created timestamps, directory-only or file-only views, and table or detailed output formats.
 
-Use this when the user asks "what's in this folder" or "what changed recently." For finding documents by content or tags, use `search_documents` instead.
+Use this when the user asks "what's in this folder," "what changed recently," or "show me the subdirectories." For finding documents by content or tags, use `search_documents` instead.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `path` | string | yes | Vault-relative directory path (e.g., "clients/acme") |
-| `recursive` | boolean | no | If true, walk entire subtree. Default: false (immediate children only). |
-| `extension` | string | no | Filter by extension (e.g., ".md", ".png"). Case-insensitive. |
-| `date_from` | string | no | Filter files modified >= this date. Supports relative ("7d", "24h", "1w") or ISO format ("2026-04-01"). |
-| `date_to` | string | no | Filter files modified <= this date. ISO format ("2026-04-01"). |
+| `path` | string | no | Vault-relative directory path. Use `""` or `"."` for vault root. Default: `"/"`. |
+| `recursive` | boolean | no | If true, walk entire subtree. Default: false. |
+| `show` | string | no | What to include: `"files"`, `"directories"`, or `"all"`. Default: `"all"`. |
+| `format` | string | no | Output format: `"table"` (markdown table, default) or `"detailed"` (key-value blocks). |
+| `extensions` | string[] | no | Filter by file extensions (e.g., `[".md", ".txt"]`). Case-insensitive. Ignored when `show` is `"directories"`. |
+| `after` | string | no | Include entries modified/created >= this date. Relative (`"7d"`, `"24h"`, `"1w"`) or ISO (`"2026-04-01"`). |
+| `before` | string | no | Include entries modified/created <= this date. Relative or ISO format. |
+| `date_field` | string | no | Which timestamp `after`/`before` filter against: `"updated"` (default) or `"created"`. |
+| `limit` | integer | no | Maximum entries to return. Default: 200. |
 
-**Returns:** List of files with paths, titles, tags, fqc_ids, and timestamps.
+**Returns:** File and directory metadata with title, tags, fqc_id, size, and timestamps for tracked files. Untracked files show filesystem metadata only. Response ends with a summary line.
 
 **Example — list a folder:**
 ```
-mcp__flashquery__list_files({
+mcp__flashquery__list_vault({
   path: "clients/acme"
 })
 ```
 
-**Example — recent markdown files across vault:**
+**Example — recent markdown files across vault with full metadata:**
 ```
-mcp__flashquery__list_files({
+mcp__flashquery__list_vault({
   path: "",
   recursive: true,
-  extension: ".md",
-  date_from: "7d"
+  extensions: [".md"],
+  after: "7d",
+  format: "detailed"
+})
+```
+
+**Example — directories only:**
+```
+mcp__flashquery__list_vault({
+  path: "projects",
+  show: "directories"
 })
 ```
 
 **Usage notes:**
-- `path` is required. Use `""` or `"."` for the vault root.
-- The parameters `recursive`, `extension`, `date_from`, and `date_to` replace the old `path_prefix`, `tags`, `tag_match`, and `exclude_archived` parameters.
+- `path` is optional (default `"/"`). Use `""` or `"."` for the vault root.
+- `extensions` is an array, not a single string. Use `[".md"]` not `".md"`.
+- The old date range parameters are gone — use `after` and `before` instead.
+- When `show` is `"directories"`, `extensions` is silently ignored.
+- Default output is a markdown table. Use `format: "detailed"` when you need `fqc_id` or tags for follow-up tool calls.
 
 ---
 
@@ -1082,6 +1098,42 @@ mcp__flashquery__reconcile_documents({
 ```
 mcp__flashquery__reconcile_documents({})
 ```
+
+---
+
+### create_directory
+
+Create one or more directories in the vault. Creates intermediate directories automatically (mkdir -p semantics). Idempotent: calling on an existing directory succeeds and is noted in the response, not treated as an error. Use this when a skill needs to set up an organizational folder structure before saving documents.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `paths` | string or string[] | yes | One or more vault-relative directory paths to create. Accepts a single string or an array of strings. |
+| `root_path` | string | no | Vault-relative base prefix applied to all entries in `paths`. Default: `"/"` (vault root). |
+
+**Returns:** Confirmation with created paths; pre-existing directories are noted (not errored).
+
+**Example — single path:**
+```
+mcp__flashquery__create_directory({
+  paths: "clients/acme/2026"
+})
+```
+
+**Example — batch with root_path:**
+```
+mcp__flashquery__create_directory({
+  paths: ["contacts", "companies", "interactions"],
+  root_path: "CRM"
+})
+```
+
+**Usage notes:**
+- `paths` is the parameter name for `create_directory` — never `path` (singular). It accepts a single string or an array.
+- Idempotent: already-existing directories are reported in the response as "already exists," not errored.
+- Illegal filesystem characters in directory name segments are sanitized (replaced with spaces) and reported.
+- Absolute paths starting with `/` are rejected — all paths must be vault-relative.
+- No write lock — pure filesystem operation. No confirmation needed before executing.
 
 ---
 
