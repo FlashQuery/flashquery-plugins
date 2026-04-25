@@ -30,7 +30,7 @@ Use this when the user wants to start a new document, note, record, or page.
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `title` | string | yes | Document title |
-| `content` | string | no | Document body (markdown). Omit to create an empty document. |
+| `content` | string | yes | Document body (markdown). Pass `""` to create an empty document. |
 | `path` | string | no | Vault-relative path (e.g., "clients/acme/notes.md"). Defaults to vault root. |
 | `tags` | string[] | no | Tags for categorization |
 | `frontmatter` | object | no | Additional frontmatter fields. Cannot override fqc_id, status, created, or fqc_instance. |
@@ -1166,14 +1166,14 @@ mcp__flashquery__remove_directory({
 
 Query or clear pending review items from the `fqc_pending_plugin_review` table for a plugin. This is the primary mechanism for **pull-based document processing** — instead of push callbacks, FlashQuery populates a work queue when it auto-tracks new files or resurrects archived ones, and skills (typically run on a schedule via `/loop` or cron) query the queue, process the items, and clear them.
 
-Call with empty `fqc_ids` (or no parameters) to **query** what's pending without deleting anything. Call with `fqc_ids` populated to **clear** those items and return what remains. The response shape is always the same: the current pending list for the plugin after any clearing.
+Call with empty `fqc_ids` to **query** what's pending without deleting anything. Call with `fqc_ids` populated to **clear** those items and return what remains. The response shape is always the same: the current pending list for the plugin after any clearing.
 
 This tool replaces the old `on_document_discovered` push callback pattern. Skills are now triggered on a schedule and pull from this queue rather than being invoked reactively per-file.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `plugin_id` | string | no | Plugin identifier. Omit to query across all plugins. Provide to scope to one plugin. |
+| `plugin_id` | string | yes | Plugin identifier. Always required — queries are scoped to one plugin. |
 | `plugin_instance` | string | no | Plugin instance identifier. Default: "default" |
 | `fqc_ids` | string[] | no | Document IDs to clear. Empty array or omitted = query mode (list pending items without deleting). Non-empty = clear matching rows, then return what remains. |
 
@@ -1211,12 +1211,7 @@ Step 4 — If items remain, the next scheduled invocation picks them up (increme
 
 "No action needed" is a valid reason to clear — if a document doesn't need processing, clear it anyway so it doesn't pile up.
 
-**Example — query what's pending (all plugins):**
-```
-mcp__flashquery__clear_pending_reviews({})
-```
-
-**Example — query for a specific plugin:**
+**Example — query what's pending for a plugin:**
 ```
 mcp__flashquery__clear_pending_reviews({
   plugin_id: "crm"
