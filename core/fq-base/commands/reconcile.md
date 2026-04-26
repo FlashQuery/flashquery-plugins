@@ -1,6 +1,5 @@
 ---
 description: Reconcile the FQC database against the vault filesystem
-argument-hint: [dry-run]
 ---
 
 Verify every FQC database row against the current vault filesystem by calling `reconcile_documents`.

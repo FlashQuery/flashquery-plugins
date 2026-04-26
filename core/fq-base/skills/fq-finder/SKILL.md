@@ -1,6 +1,16 @@
 ---
 name: fq-finder
-description: Find, recall, and surface existing content from the FlashQuery Core vault — documents, memories, and plugin records. Use this skill whenever the user wants to search for something, look something up, recall previously saved information, get an overview of a topic, or browse what they have stored. Trigger on phrases like "find documents about," "what do we know about," "show me the notes from," "remember when we discussed," "give me an overview of," "search for anything related to," "what did I save about," "pull up that memory about," "show me what I remembered about," "do I have any notes on," "look up," "find me," "what's stored about," "give me a briefing on," or "show me everything on." Even casual phrasing like "what do I know about X?" or "anything saved on Y?" should trigger fq-finder.
+description: >-
+  Find, recall, and surface existing content from the FlashQuery Core vault — documents,
+  memories, and plugin records. Use this skill whenever the user wants to search for
+  something, look something up, recall previously saved information, get an overview of a
+  topic, or browse what they have stored. Trigger on phrases like "find documents about,"
+  "what do we know about," "show me the notes from," "remember when we discussed,"
+  "give me an overview of," "search for anything related to," "what did I save about,"
+  "pull up that memory about," "show me what I remembered about," "do I have any notes on,"
+  "look up," "find me," "what's stored about," "give me a briefing on," or "show me
+  everything on." Even casual phrasing like "what do I know about X?" or "anything saved
+  on Y?" should trigger fq-finder.
 ---
 
 # fq-finder

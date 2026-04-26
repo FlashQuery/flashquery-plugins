@@ -1,6 +1,20 @@
 ---
 name: fq-organizer
-description: Run bulk organization and vault maintenance operations — tagging sets of documents, archiving old content, cleaning up memories at scale, and operational hygiene like moving/copying documents, removing empty folders, reconciling the database against the filesystem, and forcing file scans. Use this skill whenever the user wants to organize, clean up, bulk tag, or do sweeping operations across multiple documents or memories. Also trigger when the user wants to move or rename a document, copy a doc as a template/starting point, delete an empty folder, resync the database after external file changes, or force the vault scanner to catch up. Trigger on phrases like "clean up," "organize," "archive old documents," "what's out of date," "bulk tag," "tag everything in this project as," "archive anything older than," "tag all the X as Y," "mark all my Y docs as," "clean up old memories about," "organize my research docs," "move this file to," "rename this document," "copy this proposal for," "delete this empty folder," "resync the database," or "the system can't see the files I just added." Even phrasing like "get things in order" or "tidy up my vault" should trigger fq-organizer.
+description: >-
+  Run bulk organization and vault maintenance operations — tagging sets of documents,
+  archiving old content, cleaning up memories at scale, and operational hygiene like
+  moving/copying documents, removing empty folders, reconciling the database against the
+  filesystem, and forcing file scans. Use this skill whenever the user wants to organize,
+  clean up, bulk tag, or do sweeping operations across multiple documents or memories.
+  Also trigger when the user wants to move or rename a document, copy a doc as a
+  template/starting point, delete an empty folder, resync the database after external file
+  changes, or force the vault scanner to catch up. Trigger on phrases like "clean up,"
+  "organize," "archive old documents," "what's out of date," "bulk tag," "tag everything
+  in this project as," "archive anything older than," "tag all the X as Y," "mark all my
+  Y docs as," "clean up old memories about," "organize my research docs," "move this file
+  to," "rename this document," "copy this proposal for," "delete this empty folder,"
+  "resync the database," or "the system can't see the files I just added." Even phrasing
+  like "get things in order" or "tidy up my vault" should trigger fq-organizer.
 ---
 
 # fq-organizer

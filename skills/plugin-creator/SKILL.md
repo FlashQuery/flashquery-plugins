@@ -146,7 +146,7 @@ python3 -c "import json; json.load(open('<plugin-dir>/.claude-plugin/plugin.json
 
 **Skill linting:**
 
-After structure validation passes, lint each skill file using Python:
+After structure validation passes, lint each skill and command file using Python:
 
 ```python
 import os
@@ -155,36 +155,100 @@ import re
 PLUGIN_DIR = "<plugin-dir>"
 LINTS = []
 
-# Check 1: #status tag misuse (should use "status" frontmatter property instead)
+def get_frontmatter_lines(content):
+    """Return the raw lines between the opening --- delimiters."""
+    if not content.startswith("---"):
+        return []
+    end = content.find("\n---", 3)
+    if end == -1:
+        return []
+    return content[4:end].splitlines()
+
+# ── Skill checks ────────────────────────────────────────────────────────────
 skills_dir = os.path.join(PLUGIN_DIR, "skills")
 if os.path.exists(skills_dir):
-    for skill_name in os.listdir(skills_dir):
+    for skill_name in sorted(os.listdir(skills_dir)):
         skill_path = os.path.join(skills_dir, skill_name, "SKILL.md")
-        if os.path.exists(skill_path):
-            with open(skill_path) as f:
-                content = f.read()
-            
-            # Look for #status tag usage in the body (after frontmatter)
-            # Pattern: find #status/ tags anywhere in the skill content
-            if re.search(r'#status/\w+', content):
-                LINTS.append({
-                    "skill": skill_name,
-                    "issue": "#status tag found",
-                    "details": "Skills should not use #status tags. Use the 'status' frontmatter property instead to set document status (e.g., status: draft)",
-                    "severity": "warning"
-                })
+        if not os.path.exists(skill_path):
+            continue
+        with open(skill_path) as f:
+            content = f.read()
+        fm_lines = get_frontmatter_lines(content)
 
-# Report linting results
-if LINTS:
-    print("⚠️ LINTING WARNINGS:\n")
-    for lint in LINTS:
-        print(f"  {lint['skill']}: {lint['issue']}")
-        print(f"    → {lint['details']}\n")
-else:
+        # Check 1: #status tag misuse
+        if re.search(r'#status/\w+', content):
+            LINTS.append({
+                "file": f"skills/{skill_name}/SKILL.md",
+                "issue": "#status tag found",
+                "details": "Use the 'status' frontmatter property instead (e.g. status: draft)",
+                "severity": "warning",
+            })
+
+        # Check 2: Long description stored as plain scalar (not >- or | block)
+        for i, line in enumerate(fm_lines):
+            if line.startswith("description:"):
+                value = line[len("description:"):].strip()
+                is_block = value in (">", ">-", ">+", "|", "|-", "|+")
+                if not is_block and len(value) > 200:
+                    LINTS.append({
+                        "file": f"skills/{skill_name}/SKILL.md",
+                        "issue": f"Long plain-scalar description ({len(value)} chars)",
+                        "details": (
+                            "Convert to >- block scalar to prevent silent breakage from "
+                            "accidental line-wrapping. Plain scalars silently drop the "
+                            "skill from discovery if a newline sneaks in."
+                        ),
+                        "severity": "error",
+                    })
+                break
+
+# ── Command checks ───────────────────────────────────────────────────────────
+commands_dir = os.path.join(PLUGIN_DIR, "commands")
+if os.path.exists(commands_dir):
+    for cmd_file in sorted(os.listdir(commands_dir)):
+        if not cmd_file.endswith(".md"):
+            continue
+        cmd_path = os.path.join(commands_dir, cmd_file)
+        with open(cmd_path) as f:
+            content = f.read()
+        fm_lines = get_frontmatter_lines(content)
+
+        # Check 3: argument-hint stored as YAML array (unquoted brackets)
+        for line in fm_lines:
+            if line.startswith("argument-hint:"):
+                value = line[len("argument-hint:"):].strip()
+                if value.startswith("[") and not value.startswith('["') and not value.startswith("['"):
+                    LINTS.append({
+                        "file": f"commands/{cmd_file}",
+                        "issue": "argument-hint is a YAML array",
+                        "details": (
+                            'argument-hint must be a quoted string. '
+                            'Change: argument-hint: [dry-run]  '
+                            'To:     argument-hint: "[dry-run]"'
+                        ),
+                        "severity": "error",
+                    })
+                break
+
+# ── Report ───────────────────────────────────────────────────────────────────
+errors   = [l for l in LINTS if l["severity"] == "error"]
+warnings = [l for l in LINTS if l["severity"] == "warning"]
+
+if errors:
+    print("❌ LINTING ERRORS (must fix before packaging):\n")
+    for l in errors:
+        print(f"  {l['file']}: {l['issue']}")
+        print(f"    → {l['details']}\n")
+if warnings:
+    print("⚠️  LINTING WARNINGS (confirm before ignoring):\n")
+    for l in warnings:
+        print(f"  {l['file']}: {l['issue']}")
+        print(f"    → {l['details']}\n")
+if not LINTS:
     print("✓ All linting checks passed.")
 ```
 
-Fix any warnings or errors before proceeding. Warnings may be ignored with user confirmation, but errors must be fixed.
+Fix all errors before proceeding. Warnings may be ignored with user confirmation.
 
 ### Phase 5 — Package and deliver
 
@@ -216,8 +280,9 @@ if not os.path.exists(manifest_path):
 
 with open(manifest_path) as f:
     manifest = json.load(f)
-    if not all(k in manifest for k in ["name", "version", "description"]):
-        raise ValueError("plugin.json missing required fields")
+    if "name" not in manifest:
+        raise ValueError("plugin.json missing required 'name' field")
+    # version and description are strongly recommended but not technically required
 
 # Package: create .plugin file (zip)
 with zipfile.ZipFile(OUTPUT_PATH, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -325,6 +390,37 @@ The plugin-creator automatically lints all skills during Phase 4 validation. The
 
 More linting rules may be added in future versions. The linter is extensible and designed to grow as plugin patterns mature.
 
+### Rule: `argument-hint` must be a plain string
+
+**What it checks**: Command frontmatter that uses YAML bracket syntax for `argument-hint` (e.g. `argument-hint: [dry-run]`) — YAML parses this as an array, which causes "plugin validation failed" on upload to Claude Desktop.
+
+**What to fix**: Write `argument-hint` as a quoted string.
+
+❌ Bad: `argument-hint: [dry-run]`
+✓ Good: `argument-hint: "[dry-run]"`
+
+### Rule: Long skill descriptions must use `>-` block scalar
+
+**What it checks**: Skill `description` fields longer than 200 characters that are stored as plain (unquoted, unblocked) YAML scalars.
+
+**Why**: Plain scalars are fragile — if any tool (a formatter, a merge, a manual edit) introduces a newline, the YAML is silently malformed and the skill disappears from discovery with no error message. This has bitten us in practice.
+
+**What to fix**: Convert long descriptions to `>-` (folded block, strip trailing newline). The parsed value is identical — `>-` just folds wrapped lines back into spaces.
+
+❌ Bad:
+```yaml
+description: Use this skill whenever the user wants to... "do X," "do Y," "do Z," ...
+```
+
+✓ Good:
+```yaml
+description: >-
+  Use this skill whenever the user wants to... "do X," "do Y,"
+  "do Z," ...
+```
+
+Double-quoted strings inside a `>-` block are unambiguous and safe. The linter flags this as an **error** (not a warning) — fix before packaging.
+
 ---
 
 ## Common Patterns
@@ -361,11 +457,13 @@ should do and how it should be triggered.
 
 Before delivering, confirm:
 
-- [ ] `plugin.json` has `name`, `description`, `version`
+- [ ] `plugin.json` has `name` (required), plus `description` and `version` (strongly recommended)
 - [ ] Plugin `name` is kebab-case with no spaces
 - [ ] No component directories are nested inside `.claude-plugin/`
 - [ ] Each skill has a `name` and `description` in its SKILL.md frontmatter
+- [ ] Skill descriptions longer than 200 chars use `>-` block scalar (not plain single-line)
 - [ ] Each command describes what Claude should DO, written as directives (not docs)
+- [ ] Command `argument-hint` values are quoted strings, not YAML arrays (e.g. `"[dry-run]"` not `[dry-run]`)
 - [ ] MCP configs use `${CLAUDE_PLUGIN_ROOT}` for local paths, not hardcoded paths
 - [ ] `settings.json` is present only if a default agent is intentionally configured
 - [ ] `README.md` explains what the plugin does and lists components

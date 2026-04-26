@@ -32,8 +32,8 @@ plugin-name/
 ```json
 {
   "name": "my-plugin",           // REQUIRED. kebab-case, no spaces. Becomes skill namespace.
-  "version": "0.1.0",            // REQUIRED. semver (MAJOR.MINOR.PATCH)
-  "description": "...",          // REQUIRED. One sentence shown in plugin manager.
+  "version": "0.1.0",            // Optional but strongly recommended. semver (MAJOR.MINOR.PATCH).
+  "description": "...",          // Optional but strongly recommended. One sentence shown in plugin manager.
   "author": {
     "name": "Author Name",       // Optional
     "email": "author@example.com" // Optional
@@ -47,9 +47,20 @@ plugin-name/
   "commands": "./commands",
   "agents": "./agents",
   "hooks": "./hooks/hooks.json",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "outputStyles": "./output-styles/",
+  "themes": "./themes/",
+  "lspServers": "./.lsp.json",
+  "monitors": "./monitors.json",
+  "userConfig": {},              // Optional — values prompted at enable time
+  "channels": [],                // Optional — message channel declarations
+  "dependencies": []             // Optional — other plugins this plugin requires
 }
 ```
+
+> **Only `name` is truly required.** The manifest is even optional if you rely on auto-discovery,
+> but always include `name`, `version`, and `description` in practice — they're shown in the UI
+> and needed for marketplace entries.
 
 ### Name rules
 - Lowercase, hyphens only (no underscores, no spaces, no special chars)
@@ -185,3 +196,8 @@ Build command:
 ```bash
 cd /tmp && zip -r my-plugin.plugin my-plugin/ -x "*.DS_Store" -x "*/__pycache__/*" -x "*/evals/*"
 ```
+
+> **Known Claude Desktop upload bug (as of April 2026):** The file picker accepts `.plugin`
+> files but the backend may reject them with "plugin validation failed" or "upload failed".
+> Workaround: rename the file to `.zip` before uploading (e.g. `fq-base.zip`). The content
+> is identical — it's a zip either way. See GitHub issue #40414.

@@ -1,6 +1,5 @@
 ---
 description: Scan the FQC vault to discover new, moved, and deleted files
-argument-hint: [background]
 ---
 
 Trigger an immediate FlashQuery Core vault scan by calling `force_file_scan`.

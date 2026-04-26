@@ -80,9 +80,13 @@ They're instructions FOR Claude — written as directives, not user documentatio
 description: Brief description shown in /help   # Optional, max ~60 chars
 allowed-tools: Read, Write, Bash(git:*)         # Optional — restricts tools
 model: sonnet                                    # Optional: sonnet, opus, haiku
-argument-hint: <file-path>                       # Optional — autocomplete hint
+argument-hint: <file-path>                       # Optional — autocomplete hint (must be a plain string)
 ---
 ```
+
+> **`argument-hint` must be a plain string.** YAML bracket syntax like `argument-hint: [dry-run]`
+> is parsed as an array and causes "plugin validation failed" on upload. Write it as a quoted
+> string instead: `argument-hint: "[dry-run]"` or simply `argument-hint: dry-run`.
 
 ### Argument placeholders
 - `$ARGUMENTS` — captures all text after the command name as a single string
