@@ -15,16 +15,17 @@ This plugin provides the foundational AI workflows for day-to-day use of FlashQu
 Skills are auto-invoked by Claude based on what you say. You don't call them directly.
 
 ### fq-writer
-**Triggers on:** "write this up," "create a document about," "draft a note on," "add a section to," "log this under Interactions," "rewrite the Pricing section," "remember that," "save this for later," "update that memory," "forget that," and similar phrases.
+**Triggers on:** "write this up," "create a document about," "draft a note on," "add a section to," "log this under Interactions," "rewrite the Pricing section," "remember that," "save this for later," "update that memory," "forget that," "use AI to write," "generate a draft of," and similar phrases.
 
-Orchestrates document creation, modification, and memory management:
+Orchestrates document creation, modification, memory management, and AI-assisted content generation:
 - Creates new vault documents with appropriate tags, optional linking, and custom frontmatter
 - Modifies existing documents (append content, update body, change tags, update metadata)
 - Section-scoped edits: insert at a specific heading/position (`insert_in_doc`) or replace a specific section (`replace_doc_section`)
 - Saves, updates, and archives memories
+- AI-assisted writing: calls `call_model` to generate or transform content, then saves the result as a vault document
 
 ### fq-finder
-**Triggers on:** "find documents about," "what do we know about," "show me the notes from," "give me a briefing on," "what did I save about," "pull up that memory about," and similar phrases.
+**Triggers on:** "find documents about," "what do we know about," "show me the notes from," "give me a briefing on," "what did I save about," "pull up that memory about," "how much have we spent on AI," "show me LLM usage," "what did the last skill run cost," and similar phrases.
 
 Orchestrates search and retrieval across your vault:
 - Unified search across documents and memories (`search_all`)
@@ -32,6 +33,7 @@ Orchestrates search and retrieval across your vault:
 - File and directory browsing by folder path and recency (`list_vault`)
 - Memory recall (semantic search + tag browsing)
 - Briefings: structured overview of a topic using tags
+- LLM usage reporting: cost summaries, per-purpose breakdowns, per-model breakdowns, and trace-level audit using `get_llm_usage`
 
 ### fq-organizer
 **Triggers on:** "clean up," "organize," "archive old documents," "bulk tag," "tag everything in this project as," "archive anything older than," and similar phrases.
@@ -77,6 +79,8 @@ This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery in
 **Memory tools:** `save_memory`, `search_memory`, `update_memory`, `get_memory`, `list_memories`, `archive_memory`
 
 **Maintenance tools:** `force_file_scan`
+
+**LLM tools:** `call_model`, `get_llm_usage` — requires an `llm:` section in `flashquery.yml`. These tools are optional; the skills that use them degrade gracefully when LLM is not configured.
 
 ---
 

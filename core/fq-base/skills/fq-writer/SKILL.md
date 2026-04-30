@@ -6,14 +6,16 @@ description: >-
   add content to an existing document, insert content at a specific heading, replace the
   content of a specific section, prepend content to the top of a doc, tag documents, link
   docs together, remember something for later, update a memory, or archive/forget a
-  memory. Trigger on phrases like "write this up," "create a document about," "draft a
-  note on," "add a section to," "log this under the Interactions heading," "rewrite the
-  Pricing section," "insert this after the Background heading," "put a status banner at
-  the top," "save this as a doc," "tag this document," "link these two docs," "update the
-  meeting notes," "remember," "remember to," "remember that," "save this for later,"
-  "update that memory," "that memory is outdated," "forget that," or "archive the memory
-  about." Even casual phrases like "jot this down" or "keep track of this" should trigger
-  fq-writer.
+  memory. Also trigger when the user asks AI to generate or draft content for them — e.g.,
+  "use AI to write a follow-up email," "generate a summary of this," "draft a proposal
+  for Acme using AI," or "have the model write up these notes." Trigger on phrases like
+  "write this up," "create a document about," "draft a note on," "add a section to," "log
+  this under the Interactions heading," "rewrite the Pricing section," "insert this after
+  the Background heading," "put a status banner at the top," "save this as a doc," "tag
+  this document," "link these two docs," "update the meeting notes," "remember,"
+  "remember to," "remember that," "save this for later," "update that memory," "that
+  memory is outdated," "forget that," or "archive the memory about." Even casual phrases
+  like "jot this down" or "keep track of this" should trigger fq-writer.
 ---
 
 # fq-writer
@@ -27,7 +29,7 @@ This skill orchestrates FlashQuery's document and memory write tools. Its job is
 - Section-scoped edits: inserting at a specific heading/position, replacing a specific section's content
 - Saving, updating, and archiving memories
 
-Tool surface includes `create_document`, `update_document`, `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `apply_tags`, `insert_doc_link`, `archive_document`, `save_memory`, `update_memory`, `archive_memory`, plus `get_document` and `get_doc_outline` as read-side helpers.
+Tool surface includes `create_document`, `update_document`, `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `apply_tags`, `insert_doc_link`, `archive_document`, `save_memory`, `update_memory`, `archive_memory`, plus `get_document` and `get_doc_outline` as read-side helpers. When LLM is configured: `call_model` for AI-assisted content generation.
 
 ## Routing heuristic
 
@@ -44,6 +46,7 @@ Read the user's intent and route to the appropriate workflow:
 | Save a new memory ("remember that...") | → [Memory Management](workflows/memory-management.md) |
 | Update or correct an existing memory | → [Memory Management](workflows/memory-management.md) |
 | Archive or forget a memory | → [Memory Management](workflows/memory-management.md) |
+| Use AI to generate or draft content, then save it | → [AI-Assisted Writing](workflows/ai-assisted-writing.md) |
 
 If the request involves both creating a document AND saving a memory (e.g., writing up meeting notes that also surface a key takeaway), handle both in sequence: document creation first, then `save_memory`.
 
@@ -65,6 +68,7 @@ Always check `isError` on every tool response before proceeding. Common recoveri
 - **File not tracked (no fqc_id)** — call `get_document` first to auto-provision, then retry the mutation.
 - **Tag validation failure** — check for multiple `#status/*` tags; use `apply_tags` with `remove_tags` to resolve conflicts before adding new ones.
 - **File already exists** — use `update_document` or `append_to_doc` instead of `create_document`.
+- **LLM not configured** — `call_model` returns `isError: true` with "LLM is not configured." Fall back to prompting the user to provide the content manually, or skip AI generation and proceed with a placeholder body.
 
 ## Key conventions
 

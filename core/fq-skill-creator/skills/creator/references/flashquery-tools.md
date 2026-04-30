@@ -15,6 +15,7 @@ All tools return JSON responses. Always check `isError` before processing result
 - [Plugin Management](#plugin-management)
 - [Cross-Resource Tools](#cross-resource-tools)
 - [Vault Maintenance](#vault-maintenance)
+- [LLM Tools](#llm-tools)
 
 ---
 
@@ -1230,3 +1231,175 @@ mcp__flashquery__clear_pending_reviews({
 - Clearing an `fqc_id` that doesn't exist in the queue is a silent no-op — safe to pass all processed IDs.
 - The response shape is always the current pending list, regardless of whether you're querying or clearing.
 - Clearing with the full list of IDs you processed and getting back an empty list confirms all work is done.
+
+---
+
+## LLM Tools
+
+These tools require an `llm:` section in `flashquery.yml` (for `call_model`) and a Supabase connection (for `get_llm_usage`). Both tools are always registered — they return informative errors when their prerequisites are absent. Do not use these tools in skills unless the skill's README or documentation explicitly states that LLM access is available.
+
+The `llm:` config uses a three-layer model: **providers** (named API endpoints), **models** (named aliases mapping to a provider + underlying model string + cost), and **purposes** (named calling policies with an ordered fallback chain). Skills reference models and purposes by their alias names, never by the underlying API model string.
+
+### call_model
+
+Call any configured LLM model and receive its text response plus a diagnostic envelope with token usage, computed cost, and latency. Used when a skill needs to generate content, classify text, transform data, or run any AI step internally — without the user making the call themselves.
+
+Two resolvers are available:
+- **`resolver: "model"`** — calls one specific model alias directly. Use when determinism matters (testing, benchmarking).
+- **`resolver: "purpose"`** — walks a named purpose's fallback chain in order. Use for production workflows — survives provider outages automatically.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `resolver` | "model" or "purpose" | yes | Which calling mode to use. |
+| `name` | string | yes | Model alias name (resolver=model) or purpose name (resolver=purpose). Both are lowercased before lookup. |
+| `messages` | array | yes | OpenAI-style messages array, minimum one item. Each item: `{ role: "system" \| "user" \| "assistant" \| "tool", content: string }`. |
+| `parameters` | object | no | Optional LLM parameters (temperature, max_tokens, top_p, etc.) passed to the provider. When using resolver=purpose, these merge with the purpose's defaults — caller wins. |
+| `trace_id` | string | no | Correlation ID for grouping related calls. When provided, the response includes cumulative cost and token totals across all calls with the same ID. |
+
+**Returns:** A JSON object with:
+- `response` — the model's text output (string)
+- `metadata` — diagnostic envelope containing:
+  - `resolver`, `name` — echo the inputs
+  - `resolved_model_name` — the model **alias** that ran (e.g. `"fast"`), not the underlying API model string
+  - `provider_name` — which provider was used
+  - `fallback_position` — null when resolver=model; 1-indexed position in the fallback chain when resolver=purpose (1 = primary model succeeded, 2 = first fallback ran, etc.)
+  - `tokens: { input, output }` — token counts
+  - `cost_usd` — computed cost from config pricing
+  - `latency_ms` — round-trip time
+  - `trace_id`, `trace_cumulative` — present only when trace_id was provided; cumulative sums across all calls sharing that trace_id
+
+**Example — generate content via purpose:**
+```
+mcp__flashquery__call_model({
+  resolver: "purpose",
+  name: "general",
+  messages: [
+    { role: "system", content: "You are a concise writing assistant." },
+    { role: "user", content: "Summarize this intake document in 2 sentences: ..." }
+  ]
+})
+```
+
+**Example — trace a multi-step skill run's cumulative cost:**
+```
+mcp__flashquery__call_model({
+  resolver: "purpose",
+  name: "drafting",
+  messages: [{ role: "user", content: "Write a follow-up proposal for Acme Corp." }],
+  parameters: { temperature: 0.4 },
+  trace_id: "crm-enrich-20260430"
+})
+```
+
+**Error responses:**
+| Condition | isError | Response text |
+|-----------|---------|--------------|
+| `llm:` absent | true | `"LLM is not configured. Add an llm: section to flashquery.yml to use this tool."` |
+| Unknown model alias | true | `"Model 'X' not found. Available models: ..."` |
+| Unknown purpose name | true | `"Purpose 'X' not found. Available purposes: ..."` |
+| Chain exhausted | true | Multi-line: `"call_model failed: purpose 'X' — all N models exhausted\n  [1] model (provider): error\n  [2] ..."` |
+
+**Usage notes:**
+- `resolved_model_name` in the response is the alias (e.g. `"fast"`), not the underlying model string (e.g. `"gpt-4o-mini"`).
+- Prompt safety is the caller's responsibility — messages are forwarded as-is.
+- Do not call `call_model` with embedding-type model aliases — those are for FlashQuery's internal search.
+- When resolver=purpose, `parameters` overrides the purpose's `defaults:` for that call only.
+
+---
+
+### get_llm_usage
+
+Query aggregated LLM usage and cost statistics from the `fqc_llm_usage` table. Every `call_model` call is automatically recorded there. Use this when a skill needs to report on accumulated spend, surface usage breakdowns, or audit the calls from a specific skill run.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mode` | "summary" or "by_purpose" or "by_model" or "recent" | yes | Aggregation mode — see below. |
+| `period` | "24h" or "7d" or "30d" or "all" | no | Date range shortcut relative to now. Default: "7d". Overridden by from_date/to_date. |
+| `from_date` | string | no | ISO 8601 lower bound (inclusive). E.g. "2026-04-01". |
+| `to_date` | string | no | ISO 8601 upper bound, end-of-day inclusive for date-only values. Requires from_date. |
+| `purpose_name` | string | no | Filter to a single purpose name. Use "_direct" to filter to resolver=model calls. |
+| `model_name` | string | no | Filter to a single model alias. |
+| `trace_id` | string | no | Filter to a single trace ID — most useful with mode: "recent" to audit one skill run. |
+| `limit` | integer | no | recent mode only. Default: 20, max: 1000. |
+
+**Date range precedence:** from_date+to_date (explicit) → from_date only → period → default 7d. `to_date` without `from_date` is an error. `period: "all"` removes all date filters.
+
+**Returns by mode:**
+
+`summary` — totals + period comparison:
+```json
+{
+  "mode": "summary",
+  "period": { "from": "2026-04-23T...", "to": "2026-04-30T..." },
+  "total_calls": 42,
+  "total_spend_usd": 0.187,
+  "avg_cost_per_call_usd": 0.00445,
+  "avg_latency_ms": 712,
+  "top_purpose": "general",
+  "top_model_name": "fast",
+  "vs_prior_period": { "calls_delta_pct": 15.3, "spend_delta_pct": 8.1 }
+}
+```
+`vs_prior_period` is absent when `period: "all"`. Delta fields are `null` when prior period had zero calls.
+
+`by_purpose` — per-purpose breakdown:
+```json
+{
+  "purposes": [
+    { "purpose_name": "general", "calls": 28, "spend_usd": 0.124, "avg_cost_per_call_usd": 0.00443, "avg_latency_ms": 690, "primary_model_hit_rate": 0.93 }
+  ],
+  "direct_model_calls": { "calls": 7, "spend_usd": 0.02, "avg_cost_per_call_usd": 0.00286, "avg_latency_ms": 410 }
+}
+```
+`primary_model_hit_rate` — fraction [0,1] of calls that used the first model in the chain. `direct_model_calls` — calls made with resolver=model.
+
+`by_model` — per-model breakdown:
+```json
+{
+  "models": [
+    { "model_name": "fast", "provider_name": "openai", "calls": 35, "pct_of_total_calls": 0.833, "avg_fallback_position": 1.03, "spend_usd": 0.144, "avg_cost_per_call_usd": 0.00411, "avg_latency_ms": 620 }
+  ]
+}
+```
+`pct_of_total_calls` — fraction [0,1] of total calls. `avg_fallback_position` — null when all calls to this model were direct (no chain).
+
+`recent` — individual records newest-first:
+```json
+{
+  "entries": [
+    { "timestamp": "2026-04-30T14:23:11Z", "purpose_name": "drafting", "model_name": "smart", "provider_name": "openai", "tokens": { "input": 820, "output": 415 }, "cost_usd": 0.0062, "latency_ms": 1840, "fallback_position": 1, "trace_id": "crm-enrich-20260430" }
+  ]
+}
+```
+Direct model calls appear with `purpose_name: "_direct"` and `fallback_position: null`.
+
+**Examples:**
+
+This week's cost summary:
+```
+mcp__flashquery__get_llm_usage({ mode: "summary" })
+```
+
+Audit calls from one skill trace:
+```
+mcp__flashquery__get_llm_usage({
+  mode: "recent",
+  trace_id: "crm-enrich-20260430"
+})
+```
+
+Per-purpose breakdown this month:
+```
+mcp__flashquery__get_llm_usage({
+  mode: "by_purpose",
+  period: "30d"
+})
+```
+
+**Usage notes:**
+- `pct_of_total_calls` and `primary_model_hit_rate` are fractions [0,1] — multiply by 100 for percentages.
+- `model_name` in all responses is the alias, not the underlying API model string.
+- Zero rows returns empty arrays and zeros — not `isError`. `isError` fires only on Supabase errors.
+- `to_date` requires `from_date`; `limit` applies only to `recent` mode.

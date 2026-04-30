@@ -4,13 +4,16 @@ description: >-
   Find, recall, and surface existing content from the FlashQuery Core vault — documents,
   memories, and plugin records. Use this skill whenever the user wants to search for
   something, look something up, recall previously saved information, get an overview of a
-  topic, or browse what they have stored. Trigger on phrases like "find documents about,"
-  "what do we know about," "show me the notes from," "remember when we discussed,"
-  "give me an overview of," "search for anything related to," "what did I save about,"
-  "pull up that memory about," "show me what I remembered about," "do I have any notes on,"
-  "look up," "find me," "what's stored about," "give me a briefing on," or "show me
-  everything on." Even casual phrasing like "what do I know about X?" or "anything saved
-  on Y?" should trigger fq-finder.
+  topic, or browse what they have stored. Also trigger when the user asks about LLM usage
+  or costs — e.g., "how much have we spent on AI this week," "show me LLM usage,"
+  "what did that last skill run cost," "which model are we using most," or "show me recent
+  AI calls." Trigger on phrases like "find documents about," "what do we know about,"
+  "show me the notes from," "remember when we discussed," "give me an overview of,"
+  "search for anything related to," "what did I save about," "pull up that memory about,"
+  "show me what I remembered about," "do I have any notes on," "look up," "find me,"
+  "what's stored about," "give me a briefing on," or "show me everything on." Even casual
+  phrasing like "what do I know about X?" or "anything saved on Y?" should trigger
+  fq-finder.
 ---
 
 # fq-finder
@@ -25,6 +28,7 @@ This skill orchestrates FlashQuery Core's search and retrieval tools. Its job is
 - Cross-entity search (documents + memories in one call)
 - Getting briefings and overviews on a topic
 - Following up on search results with full content retrieval
+- LLM usage reporting: cost summaries, per-purpose and per-model breakdowns, trace-level call audit via `get_llm_usage`
 
 Plugin record search is intentionally **not** part of fq-base — plugin-specific skills (e.g., `fq-crm`) own the schema context needed to interpret records correctly. If the user is asking about structured plugin data and a plugin skill is available, route there.
 
@@ -40,6 +44,7 @@ Read the user's intent and route to the appropriate workflow:
 | "What did I save/remember about X?" | → [Memory Recall](workflows/memory-recall.md) |
 | "Give me a briefing on X" / "overview of project X" | → [Briefing](workflows/briefing.md) |
 | "Show me everything from last week" / "what's recent?" | → [File Browse](workflows/file-browse.md) (or [Document Search](workflows/document-search.md) in filesystem mode) |
+| "How much have we spent on AI?" / "show me LLM usage" / "what did that run cost?" | → [LLM Usage Reporting](workflows/llm-usage-reporting.md) |
 
 When uncertain, default to [Unified Search](workflows/unified-search.md) — it covers both documents and memories in one call.
 
@@ -58,3 +63,4 @@ Don't just dump search results. After retrieving content:
 - **Ambiguous filename** — if a document tool returns an ambiguity error, use the full path or fqc_id instead.
 - **No results when the user just added or moved files** — run `force_file_scan()` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fq-organizer's [vault-maintenance](../fq-organizer/workflows/vault-maintenance.md) workflow for a full scan + reconciliation pass.
 - **No results otherwise** — let the user know nothing was found and offer to broaden the search or try different terms.
+- **Supabase not configured (`get_llm_usage` isError)** — tell the user that LLM usage reporting requires a Supabase connection and it doesn't appear to be configured.
