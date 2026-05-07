@@ -62,9 +62,9 @@ Run `search_all` with the topic as the query for a broader sweep across document
 
 ### 4. Read the source material
 
-Use the outline-first pattern:
+Use the metadata-first pattern:
 
-a. Call `get_doc_outline` for each candidate source document.
+a. Call `get_document` for each candidate source document with `include: ["frontmatter", "headings"]`.
 
 b. Identify which sections contain relevant material for the spec.
 

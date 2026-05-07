@@ -56,7 +56,7 @@ mcp__flashquery__search_memory({
 **Once a template is selected**, read it:
 ```
 mcp__flashquery__get_document({
-  identifier: "<fqc_id from the template memory>"
+  identifiers: "<fqc_id from the template memory>"
 })
 ```
 Use its frontmatter, CSS, and slide structure as the base. Merge the user's content in — do not override the template's design choices unless the user asks.

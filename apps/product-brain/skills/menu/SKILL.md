@@ -32,7 +32,7 @@ If configuration exists, gather current state:
 
 a. Call `search_records` on `projects` to list active projects.
 
-b. Call `list_files` on the inbox path to count pending items.
+b. Call `list_vault` on the inbox path to count pending items.
 
 c. Call `search_records` on `documents` with `filters: { "status": "active" }` and `limit: 1` to check whether any content exists yet.
 

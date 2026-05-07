@@ -56,36 +56,48 @@ mcp__flashquery__create_document({
 
 ### get_document
 
-Read a document's body content by path, fqc_id, or filename. Returns the full markdown body without frontmatter. To read only specific sections instead of the full body, pass a `sections` array with heading names — this is far more token-efficient for large documents. For document structure and frontmatter without body content, use `get_doc_outline` instead.
+Read one or more documents by path, fqc_id, or filename. Use `include` to request any combination of body, frontmatter, and headings. To read only specific sections instead of the full body, pass a `sections` array with heading names — this is far more token-efficient for large documents. For document structure and frontmatter without body content, call this tool with `include: ["frontmatter", "headings"]`.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `sections` | string[] | no | Heading names to extract (e.g., ["Configuration", "Examples"]). Omit to get full document. |
-| `include_subheadings` | boolean | no | If true (default), include all nested content under heading until next same-or-higher heading. If false, stop at first subheading. |
+| `identifiers` | string or string[] | yes | Document path, fqc_id UUID, filename, or an array of those. Array input returns per-element success/error objects. |
+| `include` | string[] | no | Fields to include: `"body"`, `"frontmatter"`, `"headings"`. Default: `["body"]`. |
+| `sections` | string[] | no | Heading names to extract (e.g., ["Configuration", "Examples"]). Requires `"body"` in `include`. |
+| `include_nested` | boolean | no | If true (default), include all nested content under heading until next same-or-higher heading. If false, stop at first subheading. |
 | `occurrence` | number | no | Which occurrence of heading if multiple share the same name (1-indexed). Default: 1 |
+| `max_depth` | number | no | Maximum heading depth to include when requesting headings (1-6). Default: 6. |
+| `follow_ref` | string | no | Dot-separated frontmatter path whose value should be resolved as another document identifier. |
 
-**Returns:** Document body content (without frontmatter). Metadata includes path and change status.
+**Returns:** JSON envelope with metadata (`identifier`, `title`, `path`, `fq_id`, `modified`, `size.chars`) plus requested body/frontmatter/headings. Batch input returns an array with per-element errors.
 
 **Example — full document:**
 ```
 mcp__flashquery__get_document({
-  identifier: "clients/acme/intake.md"
+  identifiers: "clients/acme/intake.md"
+})
+```
+
+**Example — structure only:**
+```
+mcp__flashquery__get_document({
+  identifiers: "clients/acme/intake.md",
+  include: ["frontmatter", "headings"]
 })
 ```
 
 **Example — specific section only:**
 ```
 mcp__flashquery__get_document({
-  identifier: "a1b2c3d4-...",
+  identifiers: "a1b2c3d4-...",
+  include: ["body"],
   sections: ["Background", "Next Steps"],
-  include_subheadings: true
+  include_nested: true
 })
 ```
 
 **Usage notes:**
-- The `identifier` is flexible: "clients/acme/notes.md", a UUID, or just "notes.md" all work. UUIDs are most reliable.
+- The `identifiers` value is flexible: "clients/acme/notes.md", a UUID, or just "notes.md" all work. UUIDs are most reliable.
 - Use `sections` to pull only what you need — avoids loading entire large documents into context.
 
 ---
@@ -1023,37 +1035,22 @@ mcp__flashquery__get_briefing({
 
 ---
 
-### get_doc_outline
+### Structure Inspection
 
-Inspect one or more documents' structure without reading the full body. Returns frontmatter (all fields including user-defined), heading hierarchy, and linked files. Accepts a single identifier or an array for batch inspection. Use this when the user asks "what's in this document" or "show me the structure" — it's far cheaper than reading the full body.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifiers` | string or string[] | yes | One or more document identifiers. Single string = full structural outline (file-based). Array = DB metadata for batch triage. |
-| `max_depth` | number | no | Maximum heading level to include (1-6). Default: 6 (all levels). |
-| `exclude_headings` | boolean | no | If true, omit headings from response (metadata only). Default: false. |
-
-**Returns:** Frontmatter fields, heading outline with hierarchy, and linked file references.
-
-**Example — single document:**
-```
-mcp__flashquery__get_doc_outline({
-  identifiers: "clients/acme/intake.md"
-})
-```
+`get_doc_outline` has been removed. Use `get_document` with `include: ["frontmatter", "headings"]` and optional `max_depth` to inspect document structure without body content.
 
 **Example — batch triage:**
 ```
-mcp__flashquery__get_doc_outline({
+mcp__flashquery__get_document({
   identifiers: ["a1b2c3d4-...", "e5f6g7h8-..."],
+  include: ["frontmatter", "headings"],
   max_depth: 2
 })
 ```
 
 **Usage notes:**
-- The parameter is `identifiers` (plural), not `identifier`. Accepts a single string or array.
-- Use this before `get_document` with `sections` to discover what headings exist.
+- There is no exact replacement for `get_doc_outline`'s old outline-only link graph. If a skill needs wikilinks, read targeted relationship sections with `get_document({ include: ["body"], sections: [...] })` and parse the wikilinks from those sections.
+- Use structure inspection before `get_document` with `sections` to discover what headings exist.
 
 ---
 
@@ -1199,7 +1196,7 @@ clear_pending_reviews({ plugin_id: "crm", fqc_ids: [] })
 → returns list of items with fqc_id, table_name, review_type, context
 
 Step 2 — Process each item:
-  - get_document({ identifier: item.fqc_id }) to read content
+  - get_document({ identifiers: item.fqc_id }) to read content
   - Apply template, classify, enrich, route, or take "no action needed"
   - Use move_document, update_document, apply_tags, etc. as needed
 

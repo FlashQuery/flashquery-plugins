@@ -73,9 +73,9 @@ The provenance chain is what lets Brief answer "why does this feature spec exist
 
 ### 5. Read targeted content
 
-Use the outline-first pattern to keep token usage manageable:
+Use the metadata-first pattern to keep token usage manageable:
 
-a. Call `get_doc_outline` for each relevant document — this gives you the section structure and linked documents without reading the body.
+a. Call `get_document` for each relevant document with `include: ["frontmatter", "headings"]` — this gives you metadata and section structure without reading the body.
 
 b. Based on the outline, decide which sections actually need reading for this brief.
 

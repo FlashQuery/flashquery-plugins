@@ -47,7 +47,7 @@ Call `get_record` or `search_records` on the `review_state` table:
 
 to find the `last_run_at` and `last_processed_at` timestamps. If no record exists (first run), process everything.
 
-Call `list_files` with the inbox path and a date filter (default: past 12 hours, or since `last_processed_at` if it's more recent) to find candidate documents.
+Call `list_vault` with the inbox path and a date filter (default: past 12 hours, or since `last_processed_at` if it's more recent) to find candidate documents.
 
 Call `search_records` with:
 - `plugin_id`: `"product-brain"`
@@ -61,13 +61,13 @@ filtered to documents updated since `last_processed_at`. Look for:
 
 ### 3. Batch-inspect structure
 
-Use the outline-first pattern to understand the documents without reading their full content:
+Use the metadata-first pattern to understand the documents without reading their full content:
 
-Call `get_doc_outline` for each candidate document (use array mode if available to batch-inspect). This gives you the section structure, frontmatter, and linked documents — enough to decide what each document is about and whether it needs full reading.
+Call `get_document` for each candidate document with `include: ["frontmatter", "headings"]` (use an array of identifiers to batch-inspect). This gives you section structure and frontmatter. If you need links, read only the relevant sections with `sections` and parse wikilinks; the removed `get_doc_outline` link graph has no exact replacement.
 
 ### 4. Route inbox items
 
-For each spark in the inbox, make a routing decision. Read the spark's content via `get_document` if the outline alone isn't enough to decide.
+For each spark in the inbox, make a routing decision. Read the spark's content via `get_document` if the frontmatter and headings are not enough to decide.
 
 **Route to an existing research note** — when the spark's content clearly contributes to an existing research topic:
 

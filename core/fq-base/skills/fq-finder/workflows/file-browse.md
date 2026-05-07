@@ -14,7 +14,7 @@ Use this workflow when the user wants to browse vault files and folders by path 
 ## When NOT to use
 
 - Content-based discovery ("find notes about X") → [Document Search](document-search.md)
-- Reading the structure of a specific file (headings, links) → `get_doc_outline`
+- Reading the structure of a specific file (frontmatter and headings) → `get_document` with `include: ["frontmatter", "headings"]`
 - Cross-type search spanning documents + memories → [Unified Search](unified-search.md)
 - Browsing plugin records → out of scope for fq-base; use the plugin's own skill
 
@@ -116,5 +116,5 @@ See [vault-maintenance](../../fq-organizer/workflows/vault-maintenance.md) in fq
 
 1. **Group by subfolder** if `recursive: true` returned a wide tree — readable summaries beat flat lists once there are more than ~15 files.
 2. **Lead with dates** if the user asked a recency question — put the `updated` timestamp up front.
-3. **Offer a drill-in.** After showing what's in a folder, a natural next step is "want me to read any of these?" — answer via `get_document` or `get_doc_outline`.
+3. **Offer a drill-in.** After showing what's in a folder, a natural next step is "want me to read any of these?" — answer via `get_document`, using `include: ["frontmatter", "headings"]` when structure is enough.
 4. **Choose format wisely.** Use `format: "detailed"` when you need `fqc_id` or tags for a follow-up tool call (e.g., `apply_tags`, `get_document` by UUID, `update_record`). Use `format: "table"` (default) when presenting results to the user — it's more readable.

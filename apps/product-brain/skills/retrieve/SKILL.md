@@ -75,7 +75,7 @@ This gives you a set of `fqc_id` values to focus the semantic search on. If no f
 
 Call `search_all` with:
 - `query`: the core search query extracted in step 1
-- `type`: `"all"` (searches both documents and memories)
+- omit `entity_types` to search both documents and memories, or set `entity_types: ["documents"]` / `["memories"]` when the user explicitly scopes the search
 
 If step 3 produced a filtered set, compare the `search_all` results against the filtered `fqc_id` list and prioritize matches that appear in both. Include high-relevance results from outside the filter set as supplementary findings — they might be unexpectedly useful.
 
@@ -91,7 +91,7 @@ How you present depends on the result intent:
 
 Order by relevance. Keep the presentation scannable — the user should be able to quickly identify which document they want to dig into.
 
-**For an answer:** Read the most relevant documents via `get_document` (use `get_doc_outline` first if the document is large, then `get_document` with `sections` for targeted reading). Synthesize an answer from the content, citing which documents contributed to the answer.
+**For an answer:** Read the most relevant documents via `get_document` (use `include: ["frontmatter", "headings"]` first if the document is large, then `get_document` with `sections` for targeted reading). Synthesize an answer from the content, citing which documents contributed to the answer.
 
 **For a specific document:** Present the document's metadata and offer to show its full content or a specific section.
 

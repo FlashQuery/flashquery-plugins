@@ -18,7 +18,7 @@ updated: "{{updated}}"
 
 # Key Contacts
 
-<!-- All contacts at this company appear here as [[wikilinks]], added via insert_in_doc (add_contact skill). Example: [[Sarah Chen]], [[Marcus Webb]]. get_doc_outline reads this section to traverse the company→contact relationship without loading the full document. Never use tags like #company/acme-corp to link contacts — use wikilinks (P-03). -->
+<!-- All contacts at this company appear here as [[wikilinks]], added via insert_in_doc (add_contact skill). Example: [[Sarah Chen]], [[Marcus Webb]]. Read this section with get_document sections:["Key Contacts"] to traverse the company->contact relationship without loading the full document. Never use tags like #company/acme-corp to link contacts — use wikilinks (P-03). -->
 
 # Opportunities
 

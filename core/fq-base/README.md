@@ -72,7 +72,7 @@ This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery in
 
 **Document tools:** `create_document`, `get_document`, `update_document`, `archive_document`, `search_documents`, `move_document`, `copy_document`, `reconcile_documents`
 
-**Compound document tools:** `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `insert_doc_link`, `apply_tags`, `get_doc_outline`, `get_briefing`, `list_vault`, `search_all`
+**Compound document tools:** `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `insert_doc_link`, `apply_tags`, `get_briefing`, `list_vault`, `search_all`
 
 **Directory tools:** `create_directory`, `remove_directory`
 

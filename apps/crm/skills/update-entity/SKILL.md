@@ -185,7 +185,7 @@ When a deal closes or a relationship shifts, the user may want to update multipl
 
 **2. Identify related entities**
 
-If the update logically applies to related entities (e.g., a company stage change that should propagate to linked contacts), call `get_doc_outline` on the primary entity's document to find linked entities.
+If the update logically applies to related entities (e.g., a company stage change that should propagate to linked contacts), call `get_document` on the primary entity's document with `sections` for the relevant relationship section (for example, `["Key Contacts"]`) and parse wikilinks to find linked entities. If you need structure first, call `get_document` with `include: ["frontmatter", "headings"]`.
 
 **3. Confirm with the user before propagating**
 

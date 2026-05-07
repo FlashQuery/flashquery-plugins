@@ -191,7 +191,7 @@ Call `mcp__flashquery__get_document` using the `fqc_id` from the search result (
 
 ```
 mcp__flashquery__get_document({
-  identifier: "<fqc_id from search result>"
+  identifiers: "<fqc_id from search result>"
 })
 ```
 

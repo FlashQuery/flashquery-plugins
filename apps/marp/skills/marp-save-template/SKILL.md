@@ -48,7 +48,7 @@ Ask:
 **If from scratch:**
 - Ask: "Start from the minimal template (2 slides) or the full scaffold (title, agenda, sections, closing)?"
 - Call `mcp__flashquery__search_memory({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
-- Read it with `mcp__flashquery__get_document({ identifier: "<fqc_id>" })`
+- Read it with `mcp__flashquery__get_document({ identifiers: "<fqc_id>" })`
 - Use that content as the base for the new template
 - Save a new copy to the templates folder:
   ```

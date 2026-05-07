@@ -26,15 +26,16 @@ Guides skill creation with FlashQuery integration:
 
 ### Bundled reference
 
-The skill includes `references/flashquery-tools.md` — a comprehensive reference covering all 35 active FlashQuery MCP tools organized by category:
+The skill includes `references/flashquery-tools.md` — a comprehensive reference covering the current FlashQuery MCP tool surface organized by category:
 
-- **Document tools** (9): create, get, update, archive, search, copy, move, list, remove_directory
+- **Document tools**: create, get, update, archive, search, copy, move
 - **Section and metadata editing** (6): append, insert, replace section, update header, apply tags, insert link
 - **Memory tools** (6): save, search, list, get, update, archive
 - **Record tools** (5): create, get, update, archive, search
 - **Plugin management** (3): register, get info, unregister
-- **Cross-resource tools** (3): search all, get briefing, get doc outline
-- **Vault maintenance** (3): force file scan, reconcile, clear pending reviews
+- **Cross-resource tools** (2): search all, get briefing
+- **Vault maintenance and filesystem tools**: list vault, create/remove directory, force file scan, reconcile, clear pending reviews
+- **LLM tools**: call model, usage reporting
 
 Each tool entry includes parameter tables, return value descriptions, concrete usage examples, and notes on common pitfalls.
 

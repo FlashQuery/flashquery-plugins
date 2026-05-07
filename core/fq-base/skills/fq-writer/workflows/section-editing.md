@@ -32,10 +32,10 @@ Does the user want to rewrite the whole body?
 
 ## Recommended pre-check
 
-When the user's request doesn't explicitly name the heading (e.g., "add it to the client call section" — but there are three client-related headings), call `get_doc_outline` first to see the heading tree. This also tells you whether a heading appears multiple times, so you can pick the right `occurrence`.
+When the user's request doesn't explicitly name the heading (e.g., "add it to the client call section" — but there are three client-related headings), call `get_document` with `include: ["frontmatter", "headings"]` first to see the heading tree. This also tells you whether a heading appears multiple times, so you can pick the right `occurrence`.
 
 ```
-get_doc_outline(identifiers: "clients/acme/notes.md")
+get_document(identifiers: "clients/acme/notes.md", include: ["frontmatter", "headings"])
 ```
 
 ---
@@ -180,7 +180,7 @@ replace_doc_section(
 
 ## Error handling
 
-- **Heading not found** — the tool surfaces the available headings in its error message. Call `get_doc_outline` first if you're uncertain which headings exist, and case-match carefully.
+- **Heading not found** — the tool surfaces the available headings in its error message. Call `get_document` with `include: ["frontmatter", "headings"]` first if you're uncertain which headings exist, and case-match carefully.
 - **Ambiguous heading (multiple occurrences)** — `replace_doc_section` returns an error with each occurrence's line number. Use `occurrence` to disambiguate.
 - **Wrong `position` enum value** — the tool validates `position` and returns an error listing the valid set (`top`, `bottom`, `after_heading`, `before_heading`, `end_of_section`). Re-check the spelling.
 - **Missing `heading` when required** — `after_heading`, `before_heading`, and `end_of_section` all need `heading`; without it the tool errors.

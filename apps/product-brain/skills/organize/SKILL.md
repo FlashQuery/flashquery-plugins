@@ -41,9 +41,9 @@ Scan before asking anything. Build a full inventory and do initial rough classif
 
 1. Read the tag vocabulary via `get_document` (`{vault_root}/_plugin/tags.md`). You'll need this for re-tagging during Phase 3.
 
-2. Call `list_files` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations.
+2. Call `list_vault` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations. Use `show: "files"`, `extensions: [".md"]`, and `format: "detailed"` when you need fqc_ids and tags for follow-up calls.
 
-3. Call `get_doc_outline` in array mode to batch-inspect structure. For each document, note:
+3. Call `get_document` with an array of identifiers and `include: ["frontmatter", "headings"]` to batch-inspect structure. For each document, note:
    - Apparent document type (from frontmatter or section structure)
    - Which project folder it's in (and whether that matches its apparent type)
    - Rough age (from file metadata)
@@ -145,5 +145,5 @@ Migration is expected to take multiple sessions. Progress tracking is essential.
 
 - The `plugin_id` for all tool calls is `"product-brain"`.
 - Organize does not write to `prodbrain_projects` or `prodbrain_review_state` — it works within the existing project structure.
-- The outline-first scanning pattern (`list_files` → `get_doc_outline` → targeted `get_document`) is essential for keeping token usage manageable when processing many documents.
+- The metadata-first scanning pattern (`list_vault` -> `get_document` with `include: ["frontmatter", "headings"]` -> targeted `get_document` section reads) is essential for keeping token usage manageable when processing many documents.
 - When in doubt about a document, surface it to the user rather than making an assumption. The cost of asking is low; the cost of misrouting is time spent un-doing it later.

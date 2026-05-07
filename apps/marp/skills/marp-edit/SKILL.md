@@ -56,7 +56,7 @@ If the user provides an `fqc_id` or path directly, skip the search and use it.
 Once confirmed, read the full deck content:
 ```
 mcp__flashquery__get_document({
-  identifier: "<fqc_id>"
+  identifiers: "<fqc_id>"
 })
 ```
 

@@ -134,7 +134,6 @@ The complete reference with all parameters and return values is in [references/f
 |------|---------|
 | `search_all` | Search documents and memories simultaneously (supports entity_types filter) |
 | `get_briefing` | Get tag-scoped overview of documents, memories, and optionally plugin records |
-| `get_doc_outline` | Get document structure and frontmatter without full body (supports batch) |
 
 ### Vault maintenance tools
 | Tool | Purpose |
@@ -412,7 +411,7 @@ This skill runs on a schedule (via /loop or cron). On each invocation:
    If the response lists no pending items, do nothing and exit.
 
 4. For each pending item (process in batches of 5–10):
-   - Call `get_document({ identifier: item.fqc_id })` to read the document content
+   - Call `get_document({ identifiers: item.fqc_id })` to read the document content
    - Check `item.review_type`:
      - `template_available`: load the template from `item.context.template`
        (find it in the skill's references/ or assets/ directory), merge it with the

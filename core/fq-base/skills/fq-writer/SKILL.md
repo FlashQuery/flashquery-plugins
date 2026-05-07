@@ -29,7 +29,7 @@ This skill orchestrates FlashQuery's document and memory write tools. Its job is
 - Section-scoped edits: inserting at a specific heading/position, replacing a specific section's content
 - Saving, updating, and archiving memories
 
-Tool surface includes `create_document`, `update_document`, `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `apply_tags`, `insert_doc_link`, `archive_document`, `save_memory`, `update_memory`, `archive_memory`, plus `get_document` and `get_doc_outline` as read-side helpers. When LLM is configured: `call_model` for AI-assisted content generation.
+Tool surface includes `create_document`, `update_document`, `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `apply_tags`, `insert_doc_link`, `archive_document`, `save_memory`, `update_memory`, `archive_memory`, plus `get_document` as the read-side helper for body, frontmatter, headings, and section extraction. When LLM is configured: `call_model` for AI-assisted content generation.
 
 ## Routing heuristic
 

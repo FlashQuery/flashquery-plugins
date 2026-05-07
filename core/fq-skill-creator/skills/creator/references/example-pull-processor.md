@@ -319,14 +319,14 @@ For each item:
   - Look up that template's fqc_id via:
     search_records({ plugin_id: "research-notes", table: "templates",
                      filters: { name: item.context.template } })
-  - Read the template: get_document({ identifier: template_fqc_id })
-  - Read the document: get_document({ identifier: item.fqc_id })
+  - Read the template: get_document({ identifiers: template_fqc_id })
+  - Read the document: get_document({ identifiers: item.fqc_id })
   - Merge: preserve all user content; add template headings and sections
     that are missing. User's existing content takes precedence over template defaults.
   - Write back: update_document({ identifier: item.fqc_id, content: merged_content })
 
 **If review_type is 'new_document' (no template was declared):**
-  - Read the document: get_document({ identifier: item.fqc_id })
+  - Read the document: get_document({ identifiers: item.fqc_id })
   - Classify: determine document_type (research_note or reference_doc) from content
   - Route: move_document({ identifier: item.fqc_id,
                             destination: "Research/Notes/{filename}" })

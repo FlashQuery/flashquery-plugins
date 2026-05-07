@@ -47,12 +47,12 @@ For answering "who works at [company]?" or "what companies is [person] connected
 
 1. Call `search_records` to find the entity record (e.g., search businesses by name to find "Acme Corp").
 2. Use `search_documents` with the entity name as the `query` and `mode: "semantic"` to find the entity's vault document path.
-3. Call `get_doc_outline` on the vault document path. The outline returns all outbound links — for a company document, the Key Contacts section links are the authoritative list of associated contacts.
+3. Call `get_document` with the vault document path, `include: ["body"]`, and `sections: ["Key Contacts"]` (or the relevant relationship section). Parse the wikilinks from that section — for a company document, the Key Contacts section links are the authoritative list of associated contacts. If you need structure first, call `get_document` with `include: ["frontmatter", "headings"]`.
 4. Report the linked entities from the links. If the user wants full details on a linked contact, proceed to Mode 3.
 
 Example: "Who works at Acme Corp?"
 - `search_records` -> find Acme Corp record -> get its vault document path
-- `get_doc_outline` on the company document -> extract Key Contacts links
+- `get_document` on the company document with `sections: ["Key Contacts"]` -> extract Key Contacts links
 - Report: "Acme Corp has 3 contacts: [[Sarah Chen]], [[James Okafor]], [[Maria Reyes]]"
 
 ### Mode 3: Full detail retrieval
@@ -75,5 +75,5 @@ If `search_records` returns no results:
 
 ## Notes
 
-- For finding all contacts at a company, Mode 2 (relationship traversal via `get_doc_outline`) is more reliable than searching contact records by company name — company associations are stored as links in vault documents, not as a column in the contacts table.
+- For finding all contacts at a company, Mode 2 (relationship traversal via targeted `get_document` section reads) is more reliable than searching contact records by company name — company associations are stored as links in vault documents, not as a column in the contacts table.
 - Use Mode 1 for bulk queries (all contacts with `#stage/qualified`, everyone with `last_interaction` before a date), Mode 2 for relationship questions, and Mode 3 when the user wants to read a full profile.

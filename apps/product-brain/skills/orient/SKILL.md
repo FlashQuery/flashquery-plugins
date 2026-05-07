@@ -66,14 +66,14 @@ Call `search_records` with:
 - `limit`: 1
 
 If a recent daily log is found, read its "Tomorrow" section via `get_document` with:
-- `identifier`: the `fqc_id`
+- `identifiers`: the `fqc_id`
 - `sections`: `["Tomorrow"]`
 
 This is the "where you left off" anchor for the brief.
 
 ### 3. Check the inbox
 
-Call `list_files` with:
+Call `list_vault` with:
 - the inbox path for the active project (e.g., `product-brain/flashquery/inbox/`)
 
 Count the items and note any that have been sitting longer than a day or two.

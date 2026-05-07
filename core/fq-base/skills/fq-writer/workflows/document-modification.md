@@ -23,13 +23,13 @@ What kind of change does the user want?
 Use when the user wants to add a section, log entry, or block of content to an existing document **without replacing what's already there**.
 
 1. Identify the document (use fqc_id, path, or filename — prefer fqc_id or full path to avoid ambiguity).
-2. If you're not sure of the document's structure, call `get_doc_outline` first to understand headings before appending.
+2. If you're not sure of the document's structure, call `get_document` with `include: ["frontmatter", "headings"]` first to understand headings before appending.
 3. Call `append_to_doc`:
    - `identifier` — the document
    - `content` — the full markdown to append, including any headings (e.g., `"## New Section\n\nBody text here."`)
 4. The tool inserts two blank lines before the appended content automatically.
 
-**When to use `get_doc_outline` first:** If the user says "add a section after X" or "continue the existing notes," read the structure first to understand where things sit before writing the appended content.
+**When to read headings first:** If the user says "add a section after X" or "continue the existing notes," call `get_document` with `include: ["frontmatter", "headings"]` to understand where things sit before writing the appended content.
 
 ---
 
@@ -125,7 +125,7 @@ The tool updates both the vault frontmatter and the database. It's idempotent �
 ## Example patterns
 
 **"Add the pricing section to the proposal doc"**
-→ `get_doc_outline` (understand structure) → `append_to_doc` (content: `"## Pricing\n\n..."`)
+→ `get_document` with `include: ["frontmatter", "headings"]` (understand structure) → `append_to_doc` (content: `"## Pricing\n\n..."`)
 
 **"Update the Acme meeting notes with what we just discussed"**
 → `get_document` (read current content) → `update_document` (with revised/extended body) OR `append_to_doc` (if it's an additive update)

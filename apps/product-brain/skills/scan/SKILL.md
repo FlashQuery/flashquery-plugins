@@ -103,12 +103,13 @@ at the end.
 
 #### 5a. Inspect the document
 
-Call `get_doc_outline` to read the document's frontmatter and structure without
+Call `get_document` to read the document's frontmatter and structure without
 loading the full body:
 
 ```
-mcp__flashquery__get_doc_outline({
-  identifiers: "<fqc_id>"
+mcp__flashquery__get_document({
+  identifiers: "<fqc_id>",
+  include: ["frontmatter", "headings"]
 })
 ```
 
@@ -148,7 +149,8 @@ For documents whose type is `research_note`, read the Open Questions section:
 
 ```
 mcp__flashquery__get_document({
-  identifier: "<fqc_id>",
+  identifiers: "<fqc_id>",
+  include: ["body"],
   sections: ["Open Questions"]
 })
 ```
