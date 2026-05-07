@@ -1252,6 +1252,8 @@ Two resolvers are available:
 | `name` | string | yes | Model alias name (resolver=model) or purpose name (resolver=purpose). Both are lowercased before lookup. |
 | `messages` | array | yes | OpenAI-style messages array, minimum one item. Each item: `{ role: "system" \| "user" \| "assistant" \| "tool", content: string }`. |
 | `parameters` | object | no | Optional LLM parameters (temperature, max_tokens, top_p, etc.) passed to the provider. When using resolver=purpose, these merge with the purpose's defaults — caller wins. |
+| `template_params` | object | no | Parameters keyed by template path or alias for host-authored `{{ref:...}}` hydration. |
+| `return_messages` | boolean | no | When true, response includes post-hydration input messages plus the assistant message. Useful for debugging references. |
 | `trace_id` | string | no | Correlation ID for grouping related calls. When provided, the response includes cumulative cost and token totals across all calls with the same ID. |
 
 **Returns:** A JSON object with:
@@ -1265,6 +1267,7 @@ Two resolvers are available:
   - `cost_usd` — computed cost from config pricing
   - `latency_ms` — round-trip time
   - `trace_id`, `trace_cumulative` — present only when trace_id was provided; cumulative sums across all calls sharing that trace_id
+  - `injected_references`, `prompt_chars` — present only when host-authored `{{ref:...}}` references were hydrated
 
 **Example — generate content via purpose:**
 ```
@@ -1289,6 +1292,80 @@ mcp__flashquery__call_model({
 })
 ```
 
+**Reference hydration:**
+
+Skills can pass vault content to the delegated model without first loading it into the host agent's context by placing `{{ref:...}}` placeholders in host-authored `system` or `user` messages. FlashQuery hydrates references before provider dispatch. If any reference fails, the tool returns `isError: true` with `error: "reference_resolution_failed"` and `failed_references`; no provider call is made.
+
+Supported active reference forms:
+- `{{ref:path/to/doc.md}}` — inject a document body by vault path.
+- `{{ref:<fqc_id>}}` — inject a document body by stable UUID.
+- `{{ref:doc.md#Heading}}` — inject one heading section.
+- `{{ref:doc.md->frontmatter.path}}` — follow a frontmatter pointer and inject the target document.
+- `{{ref:@alias}}` — fill the slot from `template_params`.
+- `\{{ref:doc.md}}` — pass literal reference syntax through to the model.
+
+Do not use `{{id:...}}`; current reference hydration uses `{{ref:...}}` for paths, filenames, and UUIDs.
+
+Template documents use `fq_template: true` frontmatter and `fq_params` declarations. For a direct template reference, key `template_params` by the same identifier used in the placeholder:
+
+```
+mcp__flashquery__call_model({
+  resolver: "purpose",
+  name: "general",
+  messages: [{ role: "user", content: "Run this review:\n\n{{ref:templates/review.md}}" }],
+  template_params: {
+    "templates/review.md": {
+      target_doc: "clients/acme/proposal.md",
+      criteria: "clarity and commercial risk"
+    }
+  }
+})
+```
+
+Use aliases when one template appears multiple times:
+
+```
+mcp__flashquery__call_model({
+  resolver: "purpose",
+  name: "general",
+  messages: [{ role: "user", content: "Compare:\n\nA:\n{{ref:@review_a}}\n\nB:\n{{ref:@review_b}}" }],
+  template_params: {
+    review_a: {
+      _template: "templates/review.md",
+      target_doc: "clients/acme/proposal.md",
+      criteria: "commercial risk"
+    },
+    review_b: {
+      _template: "templates/review.md",
+      target_doc: "clients/acme/contract.md",
+      criteria: "legal risk"
+    }
+  }
+})
+```
+
+Use `_items` to inject an ordered bundle at one alias slot:
+
+```
+template_params: {
+  background: {
+    _items: [
+      "clients/acme/discovery.md",
+      "clients/acme/proposal.md#Scope",
+      "clients/acme/latest.md->versions.approved",
+      { _template: "templates/context-note.md", target_doc: "clients/acme/notes.md", focus: "open decisions" }
+    ],
+    _separator: "\n\n---\n\n"
+  }
+}
+```
+
+`#` and `->` are mutually exclusive. Alias placeholders cannot use either operator. References and template substitutions are single-pass: injected content is not scanned recursively.
+
+**Template tools for delegated models:**
+
+When a skill needs the delegated model to decide which template to call during its own tool loop, define templates with `fq_template: true`, `fq_namespace`, `fq_desc`, `fq_params`, and `fq_expose_as_tool: true`, then bind them to a purpose. Prefer this for agentic workflows where the model must choose context or operations dynamically. Prefer host-authored `{{ref:...}}` when the host already knows what context to provide.
+
 **Error responses:**
 | Condition | isError | Response text |
 |-----------|---------|--------------|
@@ -1302,6 +1379,7 @@ mcp__flashquery__call_model({
 - Prompt safety is the caller's responsibility — messages are forwarded as-is.
 - Do not call `call_model` with embedding-type model aliases — those are for FlashQuery's internal search.
 - When resolver=purpose, `parameters` overrides the purpose's `defaults:` for that call only.
+- Use `get_document` before `call_model` when the host agent must inspect, validate, quote, or edit the source content. Use `{{ref:...}}` when the content is only context for the delegated model.
 
 ---
 

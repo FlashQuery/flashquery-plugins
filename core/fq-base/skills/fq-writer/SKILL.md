@@ -47,6 +47,7 @@ Read the user's intent and route to the appropriate workflow:
 | Update or correct an existing memory | → [Memory Management](workflows/memory-management.md) |
 | Archive or forget a memory | → [Memory Management](workflows/memory-management.md) |
 | Use AI to generate or draft content, then save it | → [AI-Assisted Writing](workflows/ai-assisted-writing.md) |
+| Pass vault documents/templates into `call_model` without reading them into host context | → [Model Reference Delegation](workflows/model-reference-delegation.md) |
 
 If the request involves both creating a document AND saving a memory (e.g., writing up meeting notes that also surface a key takeaway), handle both in sequence: document creation first, then `save_memory`.
 

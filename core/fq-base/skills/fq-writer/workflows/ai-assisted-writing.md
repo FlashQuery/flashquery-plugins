@@ -72,7 +72,7 @@ Use when the user wants AI to rewrite, extend, or transform part of an existing 
 
 1. If you need to read the current content first, call `get_document` to retrieve it.
 
-2. Call `call_model` with a prompt that references the existing content as needed.
+2. Call `call_model` with the existing content. If the host agent needs to inspect or edit the content before prompting, read it with `get_document`. If the model only needs the content as context, pass it by reference with `{{ref:...}}` and follow [Model Reference Delegation](model-reference-delegation.md).
 
 3. Choose the right write tool based on scope:
    - Full body rewrite → `update_document`
@@ -90,10 +90,10 @@ Set a `trace_id` (any string, e.g. a UUID) on the first `call_model` call and re
 
 ```json
 "trace_cumulative": {
-  "calls": 3,
-  "input_tokens": 1840,
-  "output_tokens": 612,
-  "cost_usd": 0.0031
+  "total_calls": 3,
+  "total_tokens": { "input": 1840, "output": 612 },
+  "total_cost_usd": 0.0031,
+  "total_latency_ms": 8200
 }
 ```
 
@@ -116,4 +116,4 @@ This lets you report the total cost of a multi-step generation to the user at th
 → `get_document` → `call_model` (rewrite the Background section content) → `replace_doc_section` (heading: "Background", content: generated text)
 
 **"Translate my notes into a formal report (track the cost)"**
-→ `call_model` (trace_id: "report-draft-001", messages: ["Rewrite these notes as a formal report: ..."]) → `call_model` (trace_id: "report-draft-001", messages: ["Now write an executive summary for: ..."]) → `create_document` → report `trace_cumulative.cost_usd` to user
+→ `call_model` (trace_id: "report-draft-001", messages: ["Rewrite these notes as a formal report: ..."]) → `call_model` (trace_id: "report-draft-001", messages: ["Now write an executive summary for: ..."]) → `create_document` → report `trace_cumulative.total_cost_usd` to user
