@@ -10,7 +10,7 @@ Use this workflow when the user specifically wants to find vault documents.
 - "Show me what's been worked on recently"
 - "Find all meeting notes tagged #client/acme"
 
-## Tool: `search_documents`
+## Tool: `search`
 
 Choose the mode based on the query type:
 
@@ -24,13 +24,14 @@ Choose the mode based on the query type:
 
 1. **Choose the mode:** Tag/recency filtering → `filesystem`. Topic-based query → `semantic` or `mixed`. Want completeness → `mixed`.
 
-2. **Call `search_documents`:**
+2. **Call `search`:**
    ```
-   search_documents(
+   search(
      tags: [...],           // optional tag filters
      tag_match: "any",      // or "all" if multiple tags must all match
      query: "...",          // required for semantic/mixed; optional for filesystem
      mode: "mixed",
+     entity_types: ["documents"],
      limit: 10
    )
    ```
@@ -43,22 +44,22 @@ Choose the mode based on the query type:
 
 **"Find my meeting notes with Acme"**
 ```
-search_documents(tags: ["#client/acme", "#type/meeting-notes"], mode: "filesystem")
+search(tags: ["#client/acme", "#type/meeting-notes"], mode: "filesystem", entity_types: ["documents"])
 ```
 
 **"Show me documents about competitor pricing"**
 ```
-search_documents(query: "competitor pricing", mode: "semantic")
+search(query: "competitor pricing", mode: "semantic", entity_types: ["documents"])
 ```
 
 **"What have I been working on recently?"**
 ```
-search_documents(mode: "filesystem")  // no filters — returns 20 most recent
+search(mode: "filesystem", entity_types: ["documents"], list_all: true, limit: 20)
 ```
 
 **"Find all draft proposals"**
 ```
-search_documents(tags: ["#type/proposal", "#status/draft"], tag_match: "all", mode: "filesystem")
+search(tags: ["#type/proposal", "#status/draft"], tag_match: "all", mode: "filesystem", entity_types: ["documents"])
 ```
 
 ## Getting full content
@@ -92,4 +93,4 @@ get_document(identifiers: ["path1.md", "path2.md", "path3.md"], include: ["front
 
 ## When search returns unexpectedly empty
 
-If the user just added or moved files outside the chat and search returns nothing you'd expect to see, the scanner may not have picked them up yet. Run `force_file_scan()` to reindex, then retry the search. Pass `background: true` for fire-and-forget if the user doesn't need to see the scan results inline. See the vault-maintenance workflow in fq-organizer for the full scan behavior.
+If the user just added or moved files outside the chat and search returns nothing you'd expect to see, the scanner may not have picked them up yet. Run `maintain_vault(action: "sync")` to reindex, then retry the search. Pass `background: true` only for sync jobs where the user does not need inline results. See the vault-maintenance workflow in fq-organizer for the full scan behavior.

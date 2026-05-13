@@ -15,7 +15,7 @@ Core plugins provide the foundational capabilities that other plugins build on.
 | Plugin | Description | Version | Docs |
 |--------|-------------|---------|------|
 | **[FQ-Base](./core/fq-base)** | Core skills for writing, finding, and organizing vault documents and memories, plus vault maintenance commands. The general-purpose foundation layer. | 1.0.0 | [Details](./docs/fq-base.md) |
-| **[FQ-Skill-Creator](./core/fq-skill-creator)** | Meta-skill for creating new Claude skills that use FlashQuery MCP tools. Includes a complete reference for all 35 FlashQuery tools. | 2.0.0 | [Details](./docs/fq-skill-creator.md) |
+| **[FQ-Skill-Creator](./core/fq-skill-creator)** | Meta-skill for creating new Claude skills that use FlashQuery MCP tools. Includes a complete reference for the current FlashQuery tool surface. | 2.0.0 | [Details](./docs/fq-skill-creator.md) |
 
 ### App Plugins
 
@@ -42,7 +42,7 @@ These are individual skills available outside of a plugin bundle.
 
 You need two things before installing plugins:
 
-1. **FlashQuery** — installed and running as an MCP server connected to your Claude assistant. Plugins call FlashQuery tools (`create_document`, `search_records`, `save_memory`, etc.) and will not function without them. See the [FlashQuery repo](https://github.com/flashquery/flashquery) for installation instructions.
+1. **FlashQuery** — installed and running as an MCP server connected to your Claude assistant. Plugins call FlashQuery tools (`write_document`, `search_records`, `write_memory`, etc.) and will not function without them. See the [FlashQuery repo](https://github.com/flashquery/flashquery) for installation instructions.
 
 2. **Claude Code** — the CLI tool from Anthropic. Plugins are distributed as a Claude Code plugin marketplace. You can install Claude Code from [claude.com/claude-code](https://claude.com/claude-code). Plugins and skills are managed entirely through Claude — there are no separate UIs to install or configure.
 

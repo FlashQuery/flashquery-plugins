@@ -129,7 +129,7 @@ Verify every database row against the current vault filesystem and fix drift.
 /fq-base:reconcile dry-run      # Preview only — shows what would change
 ```
 
-**What it does:** Scans all database rows, finds files that moved (updates their paths), and promotes truly missing files from "missing" to "archived" status (permanent removal from search). The key distinction from vault-scan: scan goes filesystem → database (finds new files), while reconcile goes database → filesystem (fixes stale records).
+**What it does:** Runs `maintain_vault(action: "repair")` to reconcile tracked document state against the current vault. Use `dry_run` to preview proposed repairs before applying them. Pair with `/fq-base:vault-scan` when files were added outside FlashQuery.
 
 ### /fq-base:vault-health
 

@@ -58,7 +58,7 @@ Before registering, update the `_plugin` folder entries to prepend the vault roo
         title: name
         type: document_type
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: feedback
       folder: product-brain/_plugin/feedback
@@ -79,7 +79,7 @@ Before registering, update the `_plugin` folder entries to prepend the vault roo
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: flashquery-research
       folder: product-brain/flashquery/research
@@ -92,7 +92,7 @@ Before registering, update the `_plugin` folder entries to prepend the vault roo
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: flashquery-specs
       folder: product-brain/flashquery/specs
@@ -105,7 +105,7 @@ Before registering, update the `_plugin` folder entries to prepend the vault roo
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: flashquery-work
       folder: product-brain/flashquery/work
@@ -118,10 +118,10 @@ Before registering, update the `_plugin` folder entries to prepend the vault roo
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 ```
 
-Repeat the four project folder entries for each additional project declared during setup, substituting the correct vault root, project path, and project name in the `id` and `description` fields.
+Repeat the four project folder entries for each additional project declared during setup, substituting the correct vault root, project path, and project name in the `id` and `description` data.
 
 ### 2. Register the plugin
 
@@ -154,17 +154,19 @@ For each template:
 
 a. Read the template file content from the references directory.
 
-b. Call `create_document` with:
+b. Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
    - `title`: the template's display name (e.g., "Spark", "Research Note")
-   - `path`: `{vault_root}/_plugin/templates/` (e.g., `product-brain/_plugin/templates/`)
+   - `path`: `{vault_root}/_plugin/templates/{template-filename}.md` (e.g., `product-brain/_plugin/templates/spark.md`)
    - `content`: the full template file content (including frontmatter)
 
 c. Extract the `fqc_id` from the response (appears as `fqc_id: {uuid}` in the response).
 
-d. Call `create_record` with:
+d. Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
    - `plugin_id`: `"product-brain"`
    - `table`: `"templates"`
-   - `fields`:
+   - `data`:
      ```json
      {
        "fqc_id": "<uuid from step c>",
@@ -179,9 +181,10 @@ d. Call `create_record` with:
 
 Read the default tag vocabulary from `references/tags-default.md` in the skill directory.
 
-Call `create_document` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: `tags`
-- `path`: `{vault_root}/_plugin/` (e.g., `product-brain/_plugin/`)
+- `path`: `{vault_root}/_plugin/tags.md` (e.g., `product-brain/_plugin/tags.md`)
 - `content`: the full tag vocabulary file content
 
 This creates `_plugin/tags.md` — the single source of truth for available tags. Every skill that applies tags (`Capture`, `Close`, `Review Loop`, `Draft`, `Organize`) reads this file via `get_document` at runtime. The user can edit it directly in Obsidian or any text editor — changes take effect on the next skill invocation.
@@ -190,10 +193,11 @@ This creates `_plugin/tags.md` — the single source of truth for available tags
 
 For **each project** declared during the setup conversation, perform the following steps in order:
 
-a. Create the project record — all documents reference their owning project. Call `create_record` with:
+a. Create the project record — all documents reference their owning project. Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
    - `plugin_id`: `"product-brain"`
    - `table`: `"projects"`
-   - `fields`:
+   - `data`:
      ```json
      {
        "name": "<project display name>",
@@ -206,15 +210,17 @@ a. Create the project record — all documents reference their owning project. C
 
 b. The research, specs, and work folders are created automatically by FlashQuery the first time a document is written into them — no explicit directory creation is needed. The inbox folder is created by the welcome spark in step c below. Folders appear in Obsidian once their first document is captured.
 
-c. Create a welcome spark in the inbox to give the user something to see immediately. Call `create_document` with:
+c. Create a welcome spark in the inbox to give the user something to see immediately. Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
    - `title`: `Welcome to {project_name}`
-   - `path`: `{vault_root}/{project_path}/inbox/` (e.g., `product-brain/flashquery/inbox/`)
+   - `path`: `{vault_root}/{project_path}/inbox/welcome.md` (e.g., `product-brain/flashquery/inbox/welcome.md`)
    - `content`: a spark-format welcome note explaining that this is the project's inbox and how to start capturing. Use the spark template structure (frontmatter `type: spark`, body with the welcome message, empty Related and Sources sections).
 
-d. Register the welcome spark in the documents table. Extract the `fqc_id` from the response in step c, then call `create_record` with:
+d. Register the welcome spark in the documents table. Extract the `fqc_id` from the response in step c, then call `write_record` with:
+   - `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
-   - `fields`:
+   - `data`:
      ```json
      {
        "fqc_id": "<welcome doc fqc_id>",
@@ -228,7 +234,8 @@ Repeat steps a–d for every project. The first project declared is treated as t
 
 ### 6. Save configuration memory
 
-Call `save_memory` with:
+Call `write_memory` with:
+- `mode`: `"create"` for new memories or `"update"` when a `memory_id` is supplied
 - `content`: a structured configuration note. Include the vault root and all projects. Example for two projects:
 
   ```

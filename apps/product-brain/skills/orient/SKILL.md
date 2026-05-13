@@ -38,13 +38,13 @@ Keep the whole brief scannable. If the user wants to dig into any section, they'
 
 ### 1. Retrieve configuration and projects
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
 This returns the vault root and plugin configuration.
 
-Also call `search_memory` with:
+Also call `search` with:
 - `query`: `"orient preferences"`
 - `tags`: `["product-brain-config"]`
 

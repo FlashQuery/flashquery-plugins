@@ -3,7 +3,7 @@ description: Save a CRM memory — impression, preference, or observation
 argument-hint: <observation about a contact, company, or deal>
 ---
 
-Save a CRM memory from the user's input. This bypasses Claude's built-in memory system and stores directly in FlashQuery via `save_memory`.
+Save a CRM memory from the user's input. This bypasses Claude's built-in memory system and stores directly in FlashQuery via `write_memory`.
 
 ## What to do
 
@@ -15,7 +15,8 @@ Save a CRM memory from the user's input. This bypasses Claude's built-in memory 
      - `deal_context` — pricing signals, budget hints, timelines, negotiation positions
      - `company_intelligence` — market moves, org changes, competitive signals
 
-2. Call `mcp__flashquery__save_memory` with:
+2. Call `mcp__flashquery__write_memory` with:
+   - `mode`: `"create"`
    - `content`: the observation prefixed with the category in brackets, e.g., `[relationship_context] Sarah Chen seems frustrated with her current vendor...`
    - `plugin_scope`: `"crm"`
    - `tags`: always include `"crm"` plus entity names mentioned, e.g., `["crm", "Sarah Chen", "Acme Corp"]`
@@ -25,7 +26,7 @@ Save a CRM memory from the user's input. This bypasses Claude's built-in memory 
 ## Examples
 
 User: `/crm:remember Sarah at Acme prefers email over phone, mornings only`
-Action: save_memory with content `[communication_preferences] Sarah Chen at Acme Corp prefers email over phone calls, and mornings are the best window to reach her.` and tags `["crm", "Sarah Chen", "Acme Corp"]`
+Action: write_memory with `mode: "create"`, content `[communication_preferences] Sarah Chen at Acme Corp prefers email over phone calls, and mornings are the best window to reach her.`, `plugin_scope: "crm"`, and tags `["crm", "Sarah Chen", "Acme Corp"]`
 
 User: `/crm:remember heard at the conference that Acme is expanding into Europe`
-Action: save_memory with content `[company_intelligence] Heard at a conference that Acme Corp is expanding into the European market.` and tags `["crm", "Acme Corp", "expansion"]`
+Action: write_memory with `mode: "create"`, content `[company_intelligence] Heard at a conference that Acme Corp is expanding into the European market.`, `plugin_scope: "crm"`, and tags `["crm", "Acme Corp", "expansion"]`

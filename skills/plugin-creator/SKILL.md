@@ -401,7 +401,7 @@ More linting rules may be added in future versions. The linter is extensible and
 
 ### Rule: Long skill descriptions must use `>-` block scalar
 
-**What it checks**: Skill `description` fields longer than 200 characters that are stored as plain (unquoted, unblocked) YAML scalars.
+**What it checks**: Skill `description` data longer than 200 characters that are stored as plain (unquoted, unblocked) YAML scalars.
 
 **Why**: Plain scalars are fragile — if any tool (a formatter, a merge, a manual edit) introduces a newline, the YAML is silently malformed and the skill disappears from discovery with no error message. This has bitten us in practice.
 
@@ -476,7 +476,7 @@ Before delivering, confirm:
 
 ## Additional Resources
 
-- **`references/plugin-structure.md`** — Full manifest schema, all optional fields,
+- **`references/plugin-structure.md`** — Full manifest schema, all optional data,
   versioning, hooks structure, `.mcp.json` format
 - **`references/component-schemas.md`** — Detailed format specs for every component
   type with annotated examples

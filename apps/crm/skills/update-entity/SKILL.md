@@ -86,11 +86,12 @@ For opportunity records (which have no vault document), skip this step — the r
 
 **4. Update the record's tags field**
 
-Call `update_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"`, `"businesses"`, or `"opportunities"`
 - `id`: the record ID from step 1
-- `fields`: `{ "tags": "<updated comma-separated tag string>" }`
+- `data`: `{ "tags": "<updated comma-separated tag string>" }`
 
 Build the new tag string by taking the existing tags, removing the ones being removed, and adding the ones being added.
 
@@ -111,25 +112,27 @@ Used when a contact changes their name or a company rebrands. This is less commo
 
 **2. Update the vault document title**
 
-Call `update_doc_header` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `identifier`: the entity's document path (or fqc_id)
-- `updates`: `{ "title": "<new name>" }`
+- `title`: `"<new name>"`
 
 **3. Update the record name**
 
-Call `update_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"` or `"businesses"`
 - `id`: the record ID
-- `fields`: `{ "name": "<new name>" }`
+- `data`: `{ "name": "<new name>" }`
 
 **4. Update links in related documents**
 
 This is the tricky part. Other documents may reference this entity via `[[Old Name]]` links. Search for documents containing the old name:
 
-Call `search_documents` with the old name as the `query` and `mode: "semantic"`.
+Call `search` with the old name as the `query` and `mode: "semantic"`.
 
-For each document that contains a `[[Old Name]]` link, call `get_document` to read it, then call `update_document` to replace `[[Old Name]]` with `[[New Name]]` in the body.
+For each document that contains a `[[Old Name]]` link, call `get_document` to read it, then call `write_document` to replace `[[Old Name]]` with `[[New Name]]` in the body.
 
 **5. Report the result**
 
@@ -196,7 +199,7 @@ Only propagate if the user confirms. Pipeline stages on contacts may differ from
 ## Notes
 
 - Tag changes are the primary use case for this skill. The `apply_tags` tool is the right mechanism because it syncs document frontmatter and Supabase atomically.
-- `update_doc_header` is used only for the rarer title/name change case. Do not use it for tag changes — `apply_tags` handles those.
+- `write_document` is used only for the rarer title/name change case. Do not use it for tag changes — `apply_tags` handles those.
 - `replace_doc_section` is the right tool when the user wants to rewrite a specific named section. It's surgical — only the target section is replaced, so there's no risk of accidentally modifying other sections. Never use it on the Interaction Timeline (append-only).
 - Always check the current tags before applying changes, especially for pipeline stages where only one `#stage/` tag should be active.
 - When a tag doesn't match the native taxonomy in `references/tags.md`, apply it anyway (tags belong to the user — P-02) and save a preference memory so future skills recognize it.

@@ -44,7 +44,7 @@ The user's request tells you what to synthesize. Parse:
 
 ### 2. Retrieve configuration
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
@@ -56,7 +56,7 @@ Call `search_records` with:
 - `filters`: scoped to the relevant project, document types, and statuses
 - `limit`: 20
 
-For a topic-based brief, also call `search_all` with the topic as the query to catch documents that are semantically related but might not match structured filters.
+For a topic-based brief, also call `search` with the topic as the query to catch documents that are semantically related but might not match structured filters.
 
 ### 4. Traverse provenance
 

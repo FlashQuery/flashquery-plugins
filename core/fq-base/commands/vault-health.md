@@ -6,7 +6,7 @@ Run a comprehensive FlashQuery Core vault health check across three stages. The 
 
 ## Stage 1: Vault Scan
 
-Call `force_file_scan(background: false)` and report counts:
+Call `maintain_vault(action: "sync", background: false)` and report counts:
 - New files indexed
 - Moved (paths updated)
 - Missing/deleted
@@ -14,18 +14,18 @@ Call `force_file_scan(background: false)` and report counts:
 
 ## Stage 2: Reconciliation
 
-Call `reconcile_documents(dry_run: false)` and report:
+Call `maintain_vault(action: "repair", dry_run: false)` and report:
 - Total documents checked
 - Paths fixed (moved files)
 - Files archived (permanently missing)
 
 ## Stage 3: Hygiene Audit
 
-Call `search_documents(mode: "filesystem")` to scan active documents. Look for:
+Call `search(mode: "filesystem", entity_types: ["documents"], list_all: true, limit: 200)` to scan active documents. Look for:
 1. **Untagged documents** — documents with no categorization tags beyond `#status/active` (no `#type/*`, `#client/*`, or `#project/*` tags). Hard to discover later.
 2. **Stale drafts** — documents tagged `#status/draft`. Surface these for the user's awareness.
 
-For a broader check, also run `search_documents(tags: ["#status/draft"], mode: "filesystem")`.
+For a broader check, also run `search(tags: ["#status/draft"], mode: "filesystem", entity_types: ["documents"])`.
 
 ## Stage 4: Summary Report
 

@@ -29,7 +29,7 @@ get_llm_usage(
 )
 ```
 
-**Key fields to surface:**
+**Key data to surface:**
 - `total_spend_usd` — total spend for the period
 - `total_calls` — number of LLM calls
 - `avg_cost_per_call_usd`, `avg_latency_ms`
@@ -51,7 +51,7 @@ get_llm_usage(
 )
 ```
 
-**Key fields per row:**
+**Key data per row:**
 - `purpose_name` — the purpose alias (or `"_direct"` for `resolver: "model"` calls)
 - `calls` — number of calls for this purpose
 - `pct_of_total_calls` — fraction of total calls [0, 1]; multiply by 100 to display as a percentage
@@ -73,7 +73,7 @@ get_llm_usage(
 )
 ```
 
-**Key fields per row:**
+**Key data per row:**
 - `model_name` — the model alias (e.g. `"fast"`), not the underlying API model string
 - `provider_name` — which provider served the calls
 - `calls`, `spend_usd`, `avg_cost_per_call_usd`, `avg_latency_ms`
@@ -109,7 +109,7 @@ get_llm_usage(
 )
 ```
 
-**Key fields per row:**
+**Key data per row:**
 - `timestamp` — when the call was made
 - `purpose_name` — purpose alias or `"_direct"`
 - `model_name` — model alias used
@@ -124,7 +124,7 @@ get_llm_usage(
 - **`pct_of_total_calls`** is a fraction, not a percentage. Always multiply by 100 when presenting to the user (e.g., `0.34 → 34%`).
 - **`primary_model_hit_rate`** is likewise a fraction.
 - **`vs_prior_period`** fields are absent (not null) when `period: "all"` — do not try to reference them in that case.
-- **Delta fields** (`spend_delta_pct`, `calls_delta_pct`) are null when the prior period had zero calls — report "no prior data" in that case.
+- **Delta data** (`spend_delta_pct`, `calls_delta_pct`) are null when the prior period had zero calls — report "no prior data" in that case.
 - **`avg_fallback_position`** is null when all calls in the group have no fallback position (e.g., all were direct model calls). This is normal; it means no fallback chain was used.
 
 ---

@@ -58,17 +58,18 @@ When saving a memory, choose the appropriate category:
 | `deal_context` | Pricing signals, budget hints, decision timelines, negotiation positions, urgency signals |
 | `company_intelligence` | Market position, strategic moves, org changes, competitive signals, industry observations |
 
-User CRM preferences (e.g., "always lead with opportunity status") can be saved under `relationship_context` or as a general note — they will be retrieved by `search_memory` when running `crm_intel`.
+User CRM preferences (e.g., "always lead with opportunity status") can be saved under `relationship_context` or as a general note — they will be retrieved by `search` when running `crm_intel`.
 
 ## Saving a memory
 
-Call `save_memory` with:
+Call `write_memory` with:
+- `mode`: `"create"` for new memories or `"update"` when a `memory_id` is supplied
 - `content`: the memory content, prefixed with the category in brackets. Example:
   ```
   [relationship_context] Sarah Chen seems frustrated with her current data vendor — she mentioned slow support response times as her main pain point. Good opening for a conversation about switching.
   ```
 - `plugin_scope`: `"crm"` — scopes this memory to the CRM plugin
-- `tags`: always include `"crm"` plus any relevant entity names or terms, e.g., `["crm", "Sarah Chen", "data vendor"]` or `["crm", "Acme Corp", "expansion"]`. The `"crm"` tag is required — it is the only reliable way to filter CRM memories in `search_memory` and `list_memories` queries, which do not support `plugin_scope` filtering.
+- `tags`: always include `"crm"` plus any relevant entity names or terms, e.g., `["crm", "Sarah Chen", "data vendor"]` or `["crm", "Acme Corp", "expansion"]`. The `"crm"` tag is required — it is the only reliable way to filter CRM memories in `search` and `search` queries, which do not support `plugin_scope` filtering.
 
 Confirm to the user: "Saved. I'll surface this when you ask about [entity] next time."
 
@@ -76,7 +77,7 @@ Confirm to the user: "Saved. I'll surface this when you ask about [entity] next 
 
 When the user asks what's remembered about an entity, or when context is needed during intelligence synthesis:
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: the entity name plus relevant terms, e.g., `"Sarah Chen relationship context"` or `"Acme Corp strategy intelligence"`
 - `tags`: `["crm"]` — filter to CRM memories (only works if memories were saved with the `"crm"` tag, which is required by this skill's save pattern above)
 - `limit`: 5-10 results is usually sufficient
@@ -87,19 +88,20 @@ Present relevant memories with their content. Use judgment to filter out memorie
 
 When information changes or a memory needs correction:
 
-1. Call `search_memory` to find the existing memory (use the entity name and category as the query).
+1. Call `search` to find the existing memory (use the entity name and category as the query).
 2. From the results, identify the memory ID of the entry to update.
-3. Call `update_memory` with:
+3. Call `write_memory` with:
+- `mode`: `"create"` for new memories or `"update"` when a `memory_id` is supplied
    - `memory_id`: the memory ID from the search result
    - `content`: the updated content (prefix with category as before)
    - `tags`: updated tags if relevant
 
-   Note: `update_memory` does not accept `plugin_scope` — the scope is inherited from the original memory. Only `save_memory` takes `plugin_scope` when creating new memories.
+   Note: `write_memory` update mode does not accept `plugin_scope` — the scope is inherited from the original memory. Only create mode takes `plugin_scope`.
 
 The update uses insert-only versioning — the old memory is preserved in the version chain and the new content becomes the current version. You do not need to delete the old memory.
 
 ## Notes
 
-- Memory retrieval is semantic — `search_memory` uses vector similarity, so you don't need an exact match on the contact or company name. Searching "Sarah" or "data vendor frustration" will find the right memories.
+- Memory retrieval is semantic — `search` uses vector similarity, so you don't need an exact match on the contact or company name. Searching "Sarah" or "data vendor frustration" will find the right memories.
 - When running the `crm_intel` skill, always check memories as part of the synthesis — they often contain the most actionable intelligence (impressions, deal signals, user preferences) that isn't visible in the structured record or vault document.
 - The four categories (`communication_preferences`, `relationship_context`, `deal_context`, `company_intelligence`) are guidance for the AI, not a strict classification system. Use your judgment when a memory could fit more than one category.

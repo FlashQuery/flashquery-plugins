@@ -56,9 +56,10 @@ Ask: *"Have you set this, or would you like a reminder of where to find it?"* �
 
 ## Step 4 — Save configuration memory
 
-Call `mcp__flashquery__save_memory` with:
+Call `mcp__flashquery__write_memory` with:
 ```
-mcp__flashquery__save_memory({
+mcp__flashquery__write_memory({
+  mode: "create",
   content: "[marp_config] presentations_folder: <path> — templates_folder: <path>",
   tags: ["marp-config"]
 })
@@ -78,9 +79,10 @@ For each bundled template:
 
 **4a.** Read the file content from the plugin's `templates/` folder.
 
-**4b.** Call `mcp__flashquery__create_document`:
+**4b.** Call `mcp__flashquery__write_document`:
 ```
-mcp__flashquery__create_document({
+mcp__flashquery__write_document({
+  mode: "create",
   title: "MARP Template — Default Minimal",   // or "Default Scaffold"
   content: "<file content>",
   path: "<templates_folder>/marp-default-minimal.md",  // or marp-default-scaffold.md
@@ -89,7 +91,7 @@ mcp__flashquery__create_document({
 })
 ```
 
-**4c.** Check `isError`. If a document already exists at that path, ask the user whether to overwrite (use `mcp__flashquery__update_document`) or skip.
+**4c.** Check `isError`. If a document already exists at that path, ask the user whether to overwrite (use `mcp__flashquery__write_document`) or skip.
 
 **4d.** Parse `fqc_id` from each successful response.
 
@@ -97,11 +99,12 @@ mcp__flashquery__create_document({
 
 ## Step 6 — Register template memories
 
-For each installed template, call `mcp__flashquery__save_memory`:
+For each installed template, call `mcp__flashquery__write_memory`:
 
 **Minimal template:**
 ```
-mcp__flashquery__save_memory({
+mcp__flashquery__write_memory({
+  mode: "create",
   content: "[marp_template] name: Default Minimal — fqc_id: <uuid> — path: <templates_folder>/marp-default-minimal.md — use_for: general presentations, quick start, no specific brand, simple structure, minimal slides",
   tags: ["marp-config", "marp-template"]
 })
@@ -109,7 +112,8 @@ mcp__flashquery__save_memory({
 
 **Scaffold template:**
 ```
-mcp__flashquery__save_memory({
+mcp__flashquery__write_memory({
+  mode: "create",
   content: "[marp_template] name: Default Scaffold — fqc_id: <uuid> — path: <templates_folder>/marp-default-scaffold.md — use_for: general presentations, full structure, agenda, multiple sections, title slide, closing slide, team presentations",
   tags: ["marp-config", "marp-template"]
 })
@@ -129,7 +133,7 @@ Tell the user:
 
 ## Re-running configure
 
-This skill is idempotent. If a config memory already exists (found via `search_memory` with tags `["marp-config"]` before Step 1), show the current values as defaults in each prompt so the user can keep or change them.
+This skill is idempotent. If a config memory already exists (found via `search` with tags `["marp-config"]` before Step 1), show the current values as defaults in each prompt so the user can keep or change them.
 
 If template memories already exist for the default templates, ask whether to reinstall (overwrite) or skip.
 
@@ -137,6 +141,6 @@ If template memories already exist for the default templates, ask whether to rei
 
 ## Error handling
 
-- **Write lock on `save_memory`**: retry once after a brief pause. If it fails again, tell the user and continue with the remaining steps — partial configuration is recoverable.
-- **`create_document` path conflict**: offer overwrite via `update_document` or skip.
+- **Write lock on `write_memory`**: retry once after a brief pause. If it fails again, tell the user and continue with the remaining steps — partial configuration is recoverable.
+- **`write_document` path conflict**: offer overwrite via `write_document` or skip.
 - **FlashQuery MCP unavailable**: inform the user that configure requires FlashQuery. Without it, folder preferences can be noted in the conversation but not persisted.

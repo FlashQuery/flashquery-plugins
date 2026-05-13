@@ -59,8 +59,8 @@ Don't just dump search results. After retrieving content:
 
 ## Error handling
 
-- **Semantic search unavailable** — if `search_memory` or `search_all` returns an embedding error, fall back to `list_memories` with tag filters for memories and `search_documents` in filesystem mode for documents.
+- **Semantic search unavailable** — if `search` returns an embedding error, fall back to `search` with `mode: "filesystem"` and relevant filters.
 - **Ambiguous filename** — if a document tool returns an ambiguity error, use the full path or fqc_id instead.
-- **No results when the user just added or moved files** — run `force_file_scan()` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fq-organizer's [vault-maintenance](../fq-organizer/workflows/vault-maintenance.md) workflow for a full scan + reconciliation pass.
+- **No results when the user just added or moved files** — run `maintain_vault(action: "sync")` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fq-organizer's [vault-maintenance](../fq-organizer/workflows/vault-maintenance.md) workflow for a sync + repair pass.
 - **No results otherwise** — let the user know nothing was found and offer to broaden the search or try different terms.
 - **Supabase not configured (`get_llm_usage` isError)** — tell the user that LLM usage reporting requires a Supabase connection and it doesn't appear to be configured.

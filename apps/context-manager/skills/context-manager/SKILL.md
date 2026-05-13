@@ -1,14 +1,14 @@
 ---
 name: context-manager
 description: Save and restore conversation context across Claude sessions using FlashQuery's vault. Use this skill when the user wants to save the current conversation context to resume it later, export a conversation for continuity, pick up a previous conversation, or load a saved context to continue work. Trigger on phrases like "save context", "export this conversation", "context-save", "context-get", "pick up where we left off", "continue from a saved context", "load my context", "save this session", "I want to continue this in a new window", or any mention of preserving or restoring conversation state. Even casual mentions like "can we save our progress?" or "let me pick this up later" should trigger this skill.
-compatibility: "Requires FlashQuery MCP tools: mcp__flashquery__create_document, mcp__flashquery__search_documents, mcp__flashquery__get_document"
+compatibility: "Requires FlashQuery MCP tools: mcp__flashquery__write_document, mcp__flashquery__search, mcp__flashquery__get_document"
 ---
 
 # Context Manager
 
 Two workflows for saving and restoring conversation context across Claude sessions.
 
-**Tool surface:** `mcp__flashquery__create_document`, `mcp__flashquery__search_documents`, `mcp__flashquery__get_document`
+**Tool surface:** `mcp__flashquery__write_document`, `mcp__flashquery__search`, `mcp__flashquery__get_document`
 
 ---
 
@@ -95,18 +95,20 @@ Synthesize the full conversation into the template below. Be as thorough as poss
 - Derive a short, meaningful filename slug from the conversation topic
 - Format: `[topic-slug]-[YYYY-MM-DD]` (e.g., `flashquery-mcp-transport-2025-11-14`)
 - The slug should be lowercase, hyphen-separated, 3–6 words max
-- **Collision check:** Before saving, call `mcp__flashquery__search_documents` with `tags: ["ai-context"]` and `query` set to the slug to check if a similar file already exists. If a match is found, append `-v2` (or `-v3`, etc.) to the slug.
+- **Collision check:** Before saving, call `mcp__flashquery__search` with `tags: ["ai-context"]` and `query` set to the slug to check if a similar file already exists. If a match is found, append `-v2` (or `-v3`, etc.) to the slug.
 
 #### Step 3 — Save to FlashQuery
 
-Call `mcp__flashquery__create_document` with:
+Call `mcp__flashquery__write_document` with:
+- `mode`: `"create"`
 - `title`: A human-readable title derived from the slug (e.g., `"FlashQuery MCP Transport - 2025-11-14"`)
 - `content`: The fully populated Markdown template from Step 1
 - `path`: `"Contexts/[slug].md"` (e.g., `"Contexts/flashquery-mcp-transport-2025-11-14.md"`)
 - `tags`: `["ai-context"]`
 
 ```
-mcp__flashquery__create_document({
+mcp__flashquery__write_document({
+  mode: "create",
   title: "FlashQuery MCP Transport - 2025-11-14",
   content: "...",
   path: "Contexts/flashquery-mcp-transport-2025-11-14.md",
@@ -147,14 +149,14 @@ Ask the user:
 
 #### Step 2 — Search FlashQuery
 
-Call `mcp__flashquery__search_documents` with:
+Call `mcp__flashquery__search` with:
 - `query`: The partial name or topic supplied by the user
 - `tags`: `["ai-context"]`
 - `mode`: `"mixed"`
 - `limit`: 10
 
 ```
-mcp__flashquery__search_documents({
+mcp__flashquery__search({
   query: "<user's search terms>",
   tags: ["ai-context"],
   mode: "mixed",
@@ -207,5 +209,5 @@ Then respond to the user's prompt with full awareness of the loaded context — 
 - **No verbatim transcript access:** Claude reconstructs from memory. The "Conversation Reconstruction" section is a best-effort summary, not a raw export.
 - **Self-contained:** The saved file should be fully self-contained — a future Claude instance with no other context should be able to orient itself entirely from the file.
 - **Tag discipline:** Always apply the `ai-context` tag on save; always filter by it on search. This keeps context files findable and separable from other vault documents.
-- **Use fqc_id, not paths:** When referencing a document after creation, always use the UUID (`fqc_id`) returned by `create_document`. Paths can change if the user reorganizes their vault.
+- **Use fqc_id, not paths:** When referencing a document after creation, always use the UUID (`fqc_id`) returned by `write_document`. Paths can change if the user reorganizes their vault.
 - **Error handling:** Always check `isError` on every tool response before proceeding. Write lock errors should be retried once; persistent errors should be reported clearly to the user.

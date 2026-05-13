@@ -17,7 +17,7 @@ Registers a MARP template so the `marp-create` skill can automatically select it
 
 ## Step 0 — Load configuration
 
-Call `mcp__flashquery__search_memory` with `query: "marp_config presentations templates folder"` and `tags: ["marp-config"]`.
+Call `mcp__flashquery__search` with `query: "marp_config presentations templates folder"` and `tags: ["marp-config"]`.
 
 If no config memory is found, ask the user where their templates folder is. Suggest running `marp-configure` first if they haven't set things up yet.
 
@@ -41,18 +41,19 @@ Ask:
 
 **If existing file:**
 - Ask for the vault path or name of the file
-- Call `mcp__flashquery__search_documents({ query: "<name>", tags: ["#marp-template"], mode: "mixed" })` to find it
+- Call `mcp__flashquery__search({ query: "<name>", tags: ["#marp-template"], mode: "mixed" })` to find it
 - Confirm the match with the user
 - Use the returned `fqc_id` — do not create a new document
 
 **If from scratch:**
 - Ask: "Start from the minimal template (2 slides) or the full scaffold (title, agenda, sections, closing)?"
-- Call `mcp__flashquery__search_memory({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
+- Call `mcp__flashquery__search({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
 - Read it with `mcp__flashquery__get_document({ identifiers: "<fqc_id>" })`
 - Use that content as the base for the new template
 - Save a new copy to the templates folder:
   ```
-  mcp__flashquery__create_document({
+  mcp__flashquery__write_document({
+    mode: "create",
     title: "MARP Template — <name>",
     content: "<base template content>",
     path: "<templates_folder>/<slugified-name>.md",
@@ -83,9 +84,10 @@ If the user is vague, offer a few examples and ask them to expand. The quality o
 
 ## Step 4 — Save template memory
 
-Call `mcp__flashquery__save_memory`:
+Call `mcp__flashquery__write_memory`:
 ```
-mcp__flashquery__save_memory({
+mcp__flashquery__write_memory({
+  mode: "create",
   content: "[marp_template] name: <name> — fqc_id: <uuid> — path: <vault path> — use_for: <use-for description>",
   tags: ["marp-config", "marp-template"]
 })
@@ -114,5 +116,5 @@ Both bundled templates support light and dark mode via a single CSS file — no 
 ## Error handling
 
 - **Template name already exists in memories**: search existing template memories before saving. If a match is found, ask whether to update the `use_for` description or replace the template entirely.
-- **`create_document` path conflict**: offer to update the existing file or use a different filename.
+- **`write_document` path conflict**: offer to update the existing file or use a different filename.
 - **FlashQuery unavailable**: inform the user — template registration requires FlashQuery to persist the memory.

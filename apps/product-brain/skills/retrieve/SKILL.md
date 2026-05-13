@@ -23,7 +23,7 @@ Retrieve translates a natural question into a scoped search. The user asks somet
 
 The skill combines two search mechanisms:
 1. **Structured filtering** via `search_records` — narrows by project, document type, status, or tags
-2. **Semantic search** via `search_all` — finds conceptually relevant content across documents and memories
+2. **Semantic search** via `search` — finds conceptually relevant content across documents and memories
 
 Filtering happens first (when applicable), then semantic search within that scope. This keeps results focused rather than returning everything tangentially related.
 
@@ -48,7 +48,7 @@ Identify three things from the user's question:
 
 ### 2. Retrieve configuration
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
@@ -69,15 +69,15 @@ If the user specified scope filters, call `search_records` with:
   ```
 - `limit`: 20 (reasonable default; increase if the user seems to want comprehensive results)
 
-This gives you a set of `fqc_id` values to focus the semantic search on. If no filters were specified, skip this step — let `search_all` search everything.
+This gives you a set of `fqc_id` values to focus the semantic search on. If no filters were specified, skip this step — let `search` search everything.
 
 ### 4. Semantic search
 
-Call `search_all` with:
+Call `search` with:
 - `query`: the core search query extracted in step 1
 - omit `entity_types` to search both documents and memories, or set `entity_types: ["documents"]` / `["memories"]` when the user explicitly scopes the search
 
-If step 3 produced a filtered set, compare the `search_all` results against the filtered `fqc_id` list and prioritize matches that appear in both. Include high-relevance results from outside the filter set as supplementary findings — they might be unexpectedly useful.
+If step 3 produced a filtered set, compare the `search` results against the filtered `fqc_id` list and prioritize matches that appear in both. Include high-relevance results from outside the filter set as supplementary findings — they might be unexpectedly useful.
 
 ### 5. Present results
 
@@ -109,4 +109,4 @@ Keep it to one offer, not a menu of options.
 - This skill is read-only — it never creates, modifies, or deletes documents.
 - The `plugin_id` for all tool calls is `"product-brain"`.
 - When no results are found, say so plainly and suggest related queries if you can think of any. Don't pad a "no results" response with generic suggestions.
-- Memories (saved via `save_memory`) are included in `search_all` results. If a memory is relevant, include it in the results — it might contain context that didn't make it into a formal document.
+- Memories (saved via `write_memory`) are included in `search` results. If a memory is relevant, include it in the results — it might contain context that didn't make it into a formal document.

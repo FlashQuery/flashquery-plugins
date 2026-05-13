@@ -214,7 +214,7 @@ happen automatically without user invocation.
 
 ### Hook types
 - **`command`**: Runs a shell script. Input is passed as JSON on stdin. Use `jq` to
-  extract fields. Deterministic, fast, no LLM cost.
+  extract data. Deterministic, fast, no LLM cost.
 - **`prompt`**: Claude evaluates a prompt. Supports `$TOOL_INPUT` and other variables.
   Flexible but adds latency and cost.
 

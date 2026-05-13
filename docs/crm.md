@@ -121,7 +121,7 @@ Change tags, pipeline stage, relationship type, name, or document sections on an
 
 ### crm-intel — Intelligence synthesis, meeting prep, and pipeline overview
 
-Get synthesized intelligence across all three data layers — meeting prep dossiers, pipeline overviews, follow-up recommendations, and relationship insights.
+Get synthesized intelligence across all three fields layers — meeting prep dossiers, pipeline overviews, follow-up recommendations, and relationship insights.
 
 **When Claude activates this skill:** "brief me on X," "what do I know about X," "give me a dossier on X," "where do my deals stand," "show me my pipeline," "what's closing this quarter," "pipeline overview," "who haven't I spoken to," "what should I follow up on"
 
@@ -154,7 +154,7 @@ When saving a memory, Claude categorizes it and tags it for later retrieval. Whe
 
 ### archive-entity — Remove a contact or company from active use
 
-Soft-archive an entity across all three data layers. Nothing is deleted — archived entities are recoverable.
+Soft-archive an entity across all three fields layers. Nothing is deleted — archived entities are recoverable.
 
 **When Claude activates this skill:** "archive this contact," "archive Acme," "deactivate this record," "we're done with them," "they went out of business," "she left the company," "close this out"
 

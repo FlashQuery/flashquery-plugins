@@ -43,7 +43,7 @@ The user might say "draft a spec for document versioning" or "turn the scanner r
 
 ### 2. Retrieve configuration
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
@@ -58,7 +58,7 @@ Call `search_records` with:
 
 Also call `search_records` on the `provenance` table to find any existing lineage chains related to the topic — sparks that fed research notes, earlier specs that were superseded, etc.
 
-Run `search_all` with the topic as the query for a broader sweep across documents and memories.
+Run `search` with the topic as the query for a broader sweep across documents and memories.
 
 ### 4. Read the source material
 
@@ -92,19 +92,21 @@ Read the template via `get_document`.
 
 Compose the feature spec, filling in each section from the source material. The Sources section must include a `[[wikilink]]` to every research note and spark that contributed — this is the navigation layer of provenance, and it's not optional.
 
-Call `create_document` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: a clear feature name (e.g., `Document Versioning`, `Scanner Hidden File Support`)
-- `path`: `{vault_root}/{project_path}/specs/`
+- `path`: `{vault_root}/{project_path}/specs/{feature-slug}.md`
 - `content`: the complete feature spec
 
 ### 7. Register the document
 
 Extract the `fqc_id` from the response, then:
 
-a. Call `create_record` with:
+a. Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
-   - `fields`:
+   - `data`:
      ```json
      {
        "fqc_id": "<fqc_id>",
@@ -119,16 +121,17 @@ a. Call `create_record` with:
 
 b. Read the tag vocabulary via `get_document` (path: `{vault_root}/_plugin/tags.md`). Apply appropriate tags via `apply_tags` — at minimum `#needs-review` for a fresh spec, and `#dev-ready` only if the user confirms it's ready for handoff.
 
-c. Set frontmatter via `update_doc_header`.
+c. Set frontmatter via `write_document`.
 
 ### 8. Write provenance records (dual-write)
 
 For each contributing source document (research note or spark), write both layers:
 
-**Query layer** — call `create_record` with:
+**Query layer** — call `write_record` with:
+- `mode`: `"create"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"provenance"`
-- `fields`:
+- `data`:
   ```json
   {
     "source_fqc_id": "<contributing document fqc_id>",
@@ -152,4 +155,4 @@ Offer the natural next step: "Want me to prepare a Brief for the development han
 - The `plugin_id` for all tool calls is `"product-brain"`.
 - Draft doesn't replace human judgment. If the research is thin or contradictory, say so in the spec's Open Questions and Notes sections rather than papering over uncertainty with confident-sounding prose.
 - For UI-facing features, the spec might be the index document inside a feature subfolder that also contains design assets. In that case, create the spec inside `specs/{feature-name}/` rather than directly in `specs/`.
-- If the user asks to revise an existing spec rather than create a new one, this is an edit operation — read the existing spec, make the changes, and update it via `replace_doc_section` or `update_document`. Don't create a duplicate.
+- If the user asks to revise an existing spec rather than create a new one, this is an edit operation — read the existing spec, make the changes, and update it via `replace_doc_section` or `write_document`. Don't create a duplicate.

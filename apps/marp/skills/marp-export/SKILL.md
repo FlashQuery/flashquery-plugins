@@ -24,7 +24,7 @@ Export a MARP deck to PDF, PPTX, or HTML using the Marp CLI.
 
 If FlashQuery MCP is available, search for the deck by title or topic:
 ```
-mcp__flashquery__search_documents({
+mcp__flashquery__search({
   query: "<user's presentation title or topic>",
   tags: ["#marp"],
   mode: "mixed",

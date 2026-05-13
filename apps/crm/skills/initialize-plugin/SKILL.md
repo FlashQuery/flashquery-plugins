@@ -41,7 +41,8 @@ Ask the user where CRM documents should be stored in their vault. Present two op
 
 **Option B: Separate folders** — one folder for contacts and another for companies (e.g., `CRM/Contacts/` and `CRM/Companies/`). Useful if the user prefers to browse contacts and companies separately in their file system.
 
-Once the user chooses, save the configuration as a memory so all CRM skills know where to create documents. Call `save_memory` with:
+Once the user chooses, save the configuration as a memory so all CRM skills know where to create documents. Call `write_memory` with:
+- `mode`: `"create"` for new memories or `"update"` when a `memory_id` is supplied
 - `content`: a structured configuration note. Examples:
 
   For Option A (single folder):

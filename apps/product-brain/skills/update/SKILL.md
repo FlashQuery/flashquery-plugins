@@ -30,7 +30,7 @@ Valid statuses:
 
 ### 1. Identify the target document
 
-The user might reference the document by name, topic, or description. Use `search_records` and/or `search_all` to find the right document:
+The user might reference the document by name, topic, or description. Use `search_records` and/or `search` to find the right document:
 
 Call `search_records` with:
 - `plugin_id`: `"product-brain"`
@@ -41,11 +41,12 @@ If the reference is ambiguous and multiple results match, present the top candid
 
 ### 2. Update the database record
 
-Call `update_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"product-brain"`
 - `table`: `"documents"`
 - `id`: the record ID of the target document
-- `fields`:
+- `data`:
   ```json
   {
     "status": "<new status>",
@@ -55,9 +56,10 @@ Call `update_record` with:
 
 ### 3. Update the vault document frontmatter
 
-Call `update_doc_header` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `identifier`: the `fqc_id` of the target document
-- `updates`: `{ "status": "<new status>" }`
+- `frontmatter`: `{ "status": "<new status>" }`
 
 This keeps the vault file and database record in sync.
 

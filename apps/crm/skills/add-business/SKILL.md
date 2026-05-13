@@ -31,7 +31,7 @@ Ask the user for:
 
 ### 0. Retrieve vault folder configuration
 
-Before creating anything, call `search_memory` with `query: "crm_config vault folders"` and `tags: ["crm-config"]` to retrieve the folder configuration saved during plugin initialization. This tells you:
+Before creating anything, call `search` with `query: "crm_config vault folders"` and `tags: ["crm-config"]` to retrieve the folder configuration saved during plugin initialization. This tells you:
 - Whether documents go in a single folder (e.g., `CRM/`) or separate folders (e.g., `CRM/Contacts/` and `CRM/Companies/`)
 - The specific folder path for company documents
 
@@ -48,9 +48,10 @@ If a matching business is found, tell the user: "A business named [Name] already
 
 ### 2. Create the vault document (document-first)
 
-Call `create_document` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: the business name
-- `path`: the full file path including the filename with `.md` extension (e.g., `CRM/Acme Corp.md` or `CRM/Companies/Acme Corp.md`). Combine the vault folder from step 0 with the business name. Do **not** pass a directory path — `create_document` requires a complete file path.
+- `path`: the full file path including the filename with `.md` extension (e.g., `CRM/Acme Corp.md` or `CRM/Companies/Acme Corp.md`). Combine the vault folder from step 0 with the business name. Do **not** pass a directory path — `write_document` requires a complete file path.
 - `content`: a populated version of the company profile template. Structure the body as follows:
 
   ```markdown
@@ -79,7 +80,7 @@ Call `create_document` with:
 
 ### 3. Parse the fqc_id from the response
 
-The `create_document` response contains a line like:
+The `write_document` response contains a line like:
 ```
 fqc_id: 550e8400-e29b-41d4-a716-446655440000
 ```
@@ -88,10 +89,11 @@ Extract that UUID — you will need it in the next step.
 
 ### 4. Create the database record
 
-Call `create_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"businesses"`
-- `fields`:
+- `data`:
   ```json
   {
     "name": "<business name>",

@@ -44,7 +44,7 @@ If the user states a preference about how Orient or other skills should behave (
 
 ### 1. Retrieve configuration
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
@@ -63,7 +63,8 @@ Look up the daily log template. Call `search_records` with:
 
 Read the template via `get_document` using the `fqc_id` from the template record.
 
-Create the daily log document. Call `create_document` with:
+Create the daily log document. Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: a date-based title (e.g., `Daily Log — 2026-04-17`)
 - `path`: the project root (e.g., `product-brain/flashquery/`) — daily logs live at the project level, not in a subfolder
 - `content`: the populated daily log template with the four sections filled in from the conversation
@@ -72,10 +73,11 @@ Create the daily log document. Call `create_document` with:
 
 Extract the `fqc_id` from the response, then:
 
-a. Call `create_record` with:
+a. Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
-   - `fields`:
+   - `data`:
      ```json
      {
        "fqc_id": "<fqc_id>",
@@ -89,11 +91,12 @@ a. Call `create_record` with:
 
 b. Read the tag vocabulary via `get_document` (path: `{vault_root}/_plugin/tags.md`). Apply any relevant tags via `apply_tags` — daily logs typically don't need many tags, but if the user mentioned blockers, tag with `#blocked`; if they flagged a priority, tag with `#priority`.
 
-c. Set frontmatter tags and status via `update_doc_header`.
+c. Set frontmatter tags and status via `write_document`.
 
 ### 5. Save preferences (if stated)
 
-If the user mentioned a preference during close-out, call `save_memory` with:
+If the user mentioned a preference during close-out, call `write_memory` with:
+- `mode`: `"create"`
 - `content`: the preference in clear language (e.g., `[product-brain-config] Orient preference: lead with open research notes instead of inbox count`)
 - `plugin_scope`: `"product-brain"`
 - `tags`: `["product-brain-config"]`

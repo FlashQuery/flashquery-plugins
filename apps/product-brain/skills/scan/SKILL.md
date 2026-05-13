@@ -29,11 +29,11 @@ dropping files into the vault.
 
 ### 1. Update the file index
 
-Call `force_file_scan` to update FlashQuery's document index with any files
+Call `maintain_vault` to update FlashQuery's document index with any files
 added, moved, or deleted outside the conversation:
 
 ```
-mcp__flashquery__force_file_scan({})
+mcp__flashquery__maintain_vault({ action: "sync" })
 ```
 
 This ensures `fqc_documents` reflects the current state of the vault before
@@ -60,10 +60,10 @@ items exist.
 
 ### 3. Retrieve configuration
 
-Call `search_memory` to get the vault root and project list:
+Call `search` to get the vault root and project list:
 
 ```
-mcp__flashquery__search_memory({
+mcp__flashquery__search({
   query: "product-brain-config",
   tags: ["product-brain-config"]
 })
@@ -84,12 +84,12 @@ Keep this list — you'll use it to infer `project_id` from file paths.
 
 ### 4. Query pending review items
 
-Call `clear_pending_reviews` with an empty `fqc_ids` array to see what's pending:
+Call `clear_pending_reviews` with `action: "list"` to see what's pending:
 
 ```
 mcp__flashquery__clear_pending_reviews({
-  plugin_id: "product-brain",
-  fqc_ids: []
+  action: "list",
+  plugin_id: "product-brain"
 })
 ```
 
@@ -98,7 +98,7 @@ If nothing is pending, tell the user the vault is up to date and stop here.
 ### 5. Process each pending item
 
 For each item in the pending list, perform the following steps. Track the
-`fqc_id` of each item you successfully process — you'll clear them in bulk
+pending review row `id` of each item you successfully process — you'll clear them in bulk
 at the end.
 
 #### 5a. Inspect the document
@@ -181,7 +181,7 @@ mcp__flashquery__search_records({
 ```
 
 Read the template via `get_document`, then apply its structure to the document
-via `update_document` (full body replace) or `insert_in_doc` for targeted
+via `write_document` (full body replace) or `insert_in_doc` for targeted
 section insertion, preserving any content the user has already written.
 
 If the document already has headings and content, skip template application —
@@ -191,14 +191,15 @@ do not overwrite the user's work.
 
 For document-type pending items, find the existing `prodbrain_documents` record
 via `search_records` with `filters: { fqc_id: "<fqc_id>" }`, then call
-`update_record` with the inferred fields:
+`write_record` with the inferred data:
 
 ```
-mcp__flashquery__update_record({
+mcp__flashquery__write_record({
   plugin_id: "product-brain",
   table: "documents",
+  mode: "update",
   id: "<record_id>",
-  fields: {
+  data: {
     project_id: "<inferred project UUID>",
     document_type: "<inferred type>",
     status: "<from frontmatter, or 'active' if absent>",
@@ -210,11 +211,12 @@ mcp__flashquery__update_record({
 For template-type pending items, update the `prodbrain_templates` record:
 
 ```
-mcp__flashquery__update_record({
+mcp__flashquery__write_record({
   plugin_id: "product-brain",
   table: "templates",
+  mode: "update",
   id: "<record_id>",
-  fields: {
+  data: {
     document_type: "<inferred type>",
     is_base: false,
     updated_at: "<current ISO timestamp>"
@@ -224,13 +226,14 @@ mcp__flashquery__update_record({
 
 ### 6. Clear processed items
 
-Call `clear_pending_reviews` with the `fqc_ids` of all successfully processed
-documents to remove them from the pending queue:
+Call `clear_pending_reviews` with the pending review row IDs of all successfully processed
+items to remove them from the pending queue:
 
 ```
 mcp__flashquery__clear_pending_reviews({
+  action: "clear",
   plugin_id: "product-brain",
-  fqc_ids: ["<fqc_id_1>", "<fqc_id_2>", ...]
+  ids: ["<pending_review_id_1>", "<pending_review_id_2>", ...]
 })
 ```
 
@@ -254,7 +257,7 @@ Keep it brief. The user wants confirmation, not a breakdown of every file.
 - This skill is designed for periodic use via `/loop`. A reasonable cadence is
   every 30–60 minutes when actively using the vault, or on-demand when the user
   mentions adding files.
-- If `force_file_scan` reports no new, updated, or moved files AND
+- If `maintain_vault` reports no new, updated, or moved files AND
   `clear_pending_reviews` returns nothing pending, the run is a no-op —
   confirm the vault is up to date and exit.
 - Documents the user drops without a `type` frontmatter field are handled
@@ -262,5 +265,5 @@ Keep it brief. The user wants confirmation, not a breakdown of every file.
 - Template application is best-effort. If a document already has structured
   content, the skill preserves it rather than overwriting. The user can always
   ask Capture to enrich a document after the fact.
-- The Review Loop already calls `force_file_scan` at the start of its run.
+- The Review Loop already calls `maintain_vault` at the start of its run.
   Running Scan and Review Loop together is fine — the file scan is idempotent.

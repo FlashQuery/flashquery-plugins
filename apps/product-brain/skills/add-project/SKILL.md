@@ -47,7 +47,7 @@ If the user's message already contains this information (e.g., "add a project ca
 
 #### 1. Retrieve configuration
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config vault root"`
 - `tags`: `["product-brain-config"]`
 
@@ -57,10 +57,11 @@ If no configuration is found, the Product Brain hasn't been initialized yet. Tel
 
 #### 2. Create the project record
 
-Call `create_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"product-brain"`
 - `table`: `"projects"`
-- `fields`:
+- `data`:
   ```json
   {
     "name": "<project display name>",
@@ -77,12 +78,13 @@ Save the returned record ID — this is the `project_id` for all documents in th
 
 The research, specs, and work folders are created automatically by FlashQuery the first time a document is written into them. The inbox folder needs at least one document to exist, so create a welcome spark now.
 
-Call `create_document` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: `Welcome to {project_name}`
-- `path`: `{vault_root}/{project_path}/inbox/`
+- `path`: `{vault_root}/{project_path}/inbox/welcome.md`
 - `content`: a spark-format welcome note (frontmatter `type: spark`, brief body explaining this is the project inbox)
 
-Then register the welcome spark in `prodbrain_documents` via `create_record` (same fields as described in Init step 5d). The project `prodbrain_projects` record from step 2 is what makes routing work across all skills — folders appear in Obsidian as content is captured.
+Then register the welcome spark in `prodbrain_documents` via `write_record` (same data as described in Init step 5d). The project `prodbrain_projects` record from step 2 is what makes routing work across all skills — folders appear in Obsidian as content is captured.
 
 
 #### 4. Update the registered schema
@@ -115,7 +117,7 @@ c. Construct the complete `documents.types` section. Start with the `_plugin/tem
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: {slug}-research
       folder: {vault_root}/{project_path}/research
@@ -128,7 +130,7 @@ c. Construct the complete `documents.types` section. Start with the `_plugin/tem
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: {slug}-specs
       folder: {vault_root}/{project_path}/specs
@@ -141,7 +143,7 @@ c. Construct the complete `documents.types` section. Start with the `_plugin/tem
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: {slug}-work
       folder: {vault_root}/{project_path}/work
@@ -154,7 +156,7 @@ c. Construct the complete `documents.types` section. Start with the `_plugin/tem
         status: status
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 ```
 
 Repeat for every active project returned in step b.
@@ -168,9 +170,9 @@ e. Call `register_plugin` with:
 
 #### 5. Update configuration memory
 
-Call `search_memory` with `query: "product-brain-config"` and `tags: ["product-brain-config"]` to find the existing configuration memory. Then call `update_memory` with the existing `memory_id` and updated content that includes the new project in the active projects list.
+Call `search` with `query: "product-brain-config"` and `tags: ["product-brain-config"]` to find the existing configuration memory. Then call `write_memory` with `mode: "update"`, the existing `memory_id`, and updated content that includes the new project in the active projects list.
 
-If `update_memory` is not available, call `save_memory` with updated content and archive the old memory.
+If no existing configuration memory is found, call `write_memory` with `mode: "create"` and save a new configuration memory.
 
 #### 6. Confirm and offer next step
 
@@ -196,20 +198,22 @@ Present the results showing each project's name, path, status, and description.
 
 The "active project" controls which project Orient and Review Loop focus on by default. It doesn't prevent other skills from working with any project — it's a session preference, not a structural change. No database record changes.
 
-Call `save_memory` with:
+Call `write_memory` with:
+- `mode`: `"create"`
 - `content`: `[product-brain-config] Active project: {project_name} (id: {project_id}, path: {project_path})`
 - `plugin_scope`: `"product-brain"`
 - `tags`: `["product-brain-config", "active-project"]`
 
-Orient and Review Loop read this via `search_memory` at the start of each run to scope their queries to the right project. Archive any previous active-project memory to avoid conflicts.
+Orient and Review Loop read this via `search` at the start of each run to scope their queries to the right project. Archive any previous active-project memory to avoid conflicts.
 
 ### Archive a project
 
-Confirm the user's intent, then call `update_record` with:
+Confirm the user's intent, then call `write_record` with:
+- `mode`: `"update"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"projects"`
 - `id`: the project's record ID
-- `fields`: `{ "status": "archived" }`
+- `data`: `{ "status": "archived" }`
 
 This removes the project from Orient and Review Loop processing. The project folder and all documents remain in the vault and in `prodbrain_documents` with their existing statuses — archiving is a status change, not a deletion. A project can be reactivated by updating its status back to `"active"`.
 

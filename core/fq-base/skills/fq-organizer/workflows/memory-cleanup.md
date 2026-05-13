@@ -7,12 +7,12 @@ Use when the user wants to review and archive outdated or irrelevant memories in
 - "Archive my outdated memories tagged #project/old-site"
 - "Prune memories from last year that are no longer relevant"
 
-## Tool sequence: `list_memories` → confirm → `archive_memory` (per ID)
+## Tool sequence: `search` → confirm → `archive_memory` (per ID)
 
 ### 1. Find the candidate memories
 
 ```
-list_memories(
+search(
   tags: ["#project/website"],
   tag_match: "any",
   limit: 50
@@ -21,7 +21,7 @@ list_memories(
 
 Or use semantic search:
 ```
-search_memory(query: "old pricing model")
+search(query: "old pricing model")
 ```
 
 ### 2. Show candidates and confirm
@@ -56,4 +56,4 @@ Tell the user how many memories were archived and note any failures.
 
 ## Reversibility note
 
-`archive_memory` is a soft delete — archived memories are excluded from `search_memory` and `list_memories` but are preserved in the database. There is no unarchive tool; recovery would require direct database access. Mention this to users who seem to think archiving is permanent deletion.
+`archive_memory` is a soft delete — archived memories are excluded from `search` and `search` but are preserved in the database. There is no unarchive tool; recovery would require direct database access. Mention this to users who seem to think archiving is permanent deletion.

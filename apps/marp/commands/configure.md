@@ -9,7 +9,7 @@ Run the `marp-configure` skill workflow to initialize or update MARP settings.
 
 1. Immediately invoke the `marp-configure` skill workflow — start at Step 1 (presentations folder).
 
-2. If a config memory already exists (found via `search_memory` with tags `["marp-config"]`), show the current values as defaults at each prompt so the user can keep or change them.
+2. If a config memory already exists (found via `search` with tags `["marp-config"]`), show the current values as defaults at each prompt so the user can keep or change them.
 
 3. Complete all steps: folder setup, template installation, memory registration.
 

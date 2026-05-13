@@ -8,7 +8,7 @@ Meta-skill for creating new Claude skills that use FlashQuery MCP tools for docu
 
 ## Overview
 
-FQ-Skill-Creator is a developer-facing plugin. When you need to build a new skill that stores documents in the vault, manages memories, or works with structured database records, this plugin gives your Claude assistant a complete reference for all 35 FlashQuery MCP tools — so the resulting skill calls the right tools with the right parameters.
+FQ-Skill-Creator is a developer-facing plugin. When you need to build a new skill that stores documents in the vault, manages memories, or works with structured database records, this plugin gives your Claude assistant a complete reference for the current FlashQuery MCP tools — so the resulting skill calls the right tools with the right parameters.
 
 Think of it as the "teach Claude how to write FlashQuery-powered skills" plugin. You describe what your skill needs to do, and Claude uses this reference to generate properly structured SKILL.md files with correct tool calls, error handling, and FlashQuery conventions baked in.
 
@@ -50,10 +50,10 @@ The skill walks through a four-step process:
 
 **Step 2: Identify the right FlashQuery tools.** Based on the requirements, Claude maps data needs to tools:
 
-- Long-form content (notes, reports, logs) → Document tools (`create_document`, `get_document`, `update_document`, `search_documents`)
-- Facts, preferences, observations across sessions → Memory tools (`save_memory`, `search_memory`, `update_memory`)
-- Structured data with custom fields (contacts, tasks, inventory) → Record tools with a plugin schema (`register_plugin`, `create_record`, `search_records`)
-- Search across everything at once → `search_all`
+- Long-form content (notes, reports, logs) → Document tools (`write_document`, `get_document`, `search`)
+- Facts, preferences, observations across sessions → Memory tools (`write_memory`, `search`, `get_memory`, `archive_memory`)
+- Structured data with custom fields (contacts, tasks, inventory) → Record tools with a plugin schema (`register_plugin`, `write_record`, `search_records`)
+- Search across everything at once → `search`
 - Organization (tagging, linking, archiving) → Compound tools (`apply_tags`, `insert_doc_link`, `archive_document`)
 - Watch vault folders for new files → Pull-based processing with `clear_pending_reviews`
 
@@ -65,7 +65,7 @@ The skill walks through a four-step process:
 
 ## Bundled Reference
 
-The plugin bundles a comprehensive reference covering all 35 active FlashQuery MCP tools, organized into seven categories:
+The plugin bundles a comprehensive reference covering the current FlashQuery MCP tools, organized into categories:
 
 **Document tools (9):** Create, read, update, archive, search, copy, move, list files, and remove directories in the vault.
 
@@ -89,13 +89,13 @@ The reference also includes a detailed guide to the `documents.types` schema for
 
 When building FlashQuery-powered skills, the reference enforces several conventions:
 
-**Use `fqc_id` (UUID), not file paths.** Paths change when users move files; UUIDs are stable. Parse `fqc_id` from `create_document` responses and store it for later reference.
+**Use `fqc_id` (UUID), not file paths.** Paths change when users move files; UUIDs are stable. Parse `fqc_id` from `write_document` responses and store it for later reference.
 
 **Check `isError` on every tool response.** FlashQuery tools return structured responses. Always check for errors before proceeding.
 
 **Write lock recovery.** If a tool returns a write lock error, retry once after a brief pause. If it fails again, tell the user.
 
-**Section editing over full rewrites.** Prefer `replace_doc_section` or `insert_in_doc` over `update_document` when modifying part of a document. Targeted edits preserve surrounding content and avoid unnecessary re-embedding.
+**Section editing over full rewrites.** Prefer `replace_doc_section` or `insert_in_doc` over `write_document` when modifying part of a document. Targeted edits preserve surrounding content and avoid unnecessary re-embedding.
 
 **Semantic search latency.** Documents just created may not appear in semantic search immediately because embedding is asynchronous. This is normal and expected.
 

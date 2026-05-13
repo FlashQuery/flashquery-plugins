@@ -10,7 +10,7 @@ A dissolved CRM powered by FlashQuery Core. There is no CRM application — just
 
 This plugin requires a working FlashQuery Core installation. It does **not** bundle FQC itself — FQC is shared infrastructure that all FQC plugins depend on, so it's installed once at the environment level.
 
-- **FlashQuery Core MCP server** — installed and connected to your AI assistant. The CRM plugin calls FQC tools (`create_document`, `create_record`, `search_records`, `save_memory`, etc.) and will not function without them. See the [FlashQuery Core README](https://github.com/flashquery/flashquery-core) for installation instructions.
+- **FlashQuery Core MCP server** — installed and connected to your AI assistant. The CRM plugin calls FQC tools (`write_document`, `write_record`, `search_records`, `write_memory`, etc.) and will not function without them. See the [FlashQuery Core README](https://github.com/flashquery/flashquery-core) for installation instructions.
 - **Supabase instance** — configured and connected to FQC. This is where your CRM records and document embeddings live.
 - **Obsidian vault** (or any markdown-compatible file system) — for vault documents. Contact profiles, company overviews, and interaction timelines are stored as markdown files you can read and edit directly.
 
@@ -34,7 +34,7 @@ This plugin requires a working FlashQuery Core installation. It does **not** bun
 | **crm-memory** | Save, search, and update impressions, preferences, and ambient intelligence |
 | **update-entity** | Updates tags, pipeline stage, relationship type, or name on an existing contact or company |
 | **add-opportunity** | Creates a new opportunity record linked to a contact and/or company for pipeline tracking |
-| **archive-entity** | Soft-archives a contact or company across all three data layers (document, record, memories) |
+| **archive-entity** | Soft-archives a contact or company across all three fields layers (document, record, memories) |
 
 ## Data Architecture
 
@@ -42,7 +42,7 @@ The CRM uses FQC's three-layer storage model:
 
 **Documents (vault)** — The human layer. Contact profiles and company overviews as markdown files, readable in Obsidian. Interaction history appended chronologically. Wikilinks between documents form the relationship graph. This is the primary data store.
 
-**Records (Supabase)** — The query layer. Minimal structured fields for fast lookups, date-range queries, and tag-based filtering. Records help the AI *find* documents — they don't duplicate document content.
+**Records (Supabase)** — The query layer. Minimal structured data for fast lookups, date-range queries, and tag-based filtering. Records help the AI *find* documents — they don't duplicate document content.
 
 | Table | Key columns | Queries enabled |
 |-------|-------------|-----------------|

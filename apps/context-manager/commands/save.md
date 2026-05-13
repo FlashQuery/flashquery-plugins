@@ -72,11 +72,12 @@ Reconstruct the full conversation into this template. Be thorough — this file 
 - Otherwise derive the slug from the conversation topic
 - Format: `[topic-slug]-[YYYY-MM-DD]` (e.g., `flashquery-mcp-design-2026-04-21`)
 - Lowercase, hyphen-separated, 3–6 words max
-- **Collision check:** Call `mcp__flashquery__search_documents` with `tags: ["ai-context"]` and `query` set to the slug. If a similar file already exists, append `-v2` (or `-v3`, etc.).
+- **Collision check:** Call `mcp__flashquery__search` with `tags: ["ai-context"]` and `query` set to the slug. If a similar file already exists, append `-v2` (or `-v3`, etc.).
 
 ### Step 3 — Save to FlashQuery
 
-Call `mcp__flashquery__create_document` with:
+Call `mcp__flashquery__write_document` with:
+- `mode`: `"create"`
 - `title`: human-readable title from the slug (e.g., `"FlashQuery MCP Design - 2026-04-21"`)
 - `content`: the fully populated template from Step 1
 - `path`: `"Contexts/[slug].md"`

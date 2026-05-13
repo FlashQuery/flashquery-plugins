@@ -41,7 +41,7 @@ Scan before asking anything. Build a full inventory and do initial rough classif
 
 1. Read the tag vocabulary via `get_document` (`{vault_root}/_plugin/tags.md`). You'll need this for re-tagging during Phase 3.
 
-2. Call `list_vault` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations. Use `show: "files"`, `extensions: [".md"]`, and `format: "detailed"` when you need fqc_ids and tags for follow-up calls.
+2. Call `list_vault` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations. Use `show: "files"`, `extensions: [".md"]`, and `include: ["tracking"]` when you need fqc_ids and tags for follow-up calls.
 
 3. Call `get_document` with an array of identifiers and `include: ["frontmatter", "headings"]` to batch-inspect structure. For each document, note:
    - Apparent document type (from frontmatter or section structure)
@@ -59,7 +59,7 @@ Scan before asking anything. Build a full inventory and do initial rough classif
    - `table`: `"projects"`
    - to get all active and archived projects
 
-6. Call `reconcile_documents` to identify orphaned database records where vault files no longer exist.
+6. Call `maintain_vault` to identify orphaned database records where vault files no longer exist.
 
 7. Call `search_records` on `templates` to confirm which templates are available for reclassification.
 
@@ -105,8 +105,8 @@ Group similar decisions to avoid death by a thousand questions.
 
 **Reclassify to a different folder:**
 1. Move via `move_document` to the correct location
-2. Update `prodbrain_documents` via `update_record` with corrected `document_type` and `status`
-3. Correct frontmatter via `update_doc_header`
+2. Update `prodbrain_documents` via `write_record` with corrected `document_type` and `status`
+3. Correct frontmatter via `write_document`
 4. Re-tag via `apply_tags` if the new type calls for different tags
 
 **Archive stale content:**
@@ -115,8 +115,8 @@ Group similar decisions to avoid death by a thousand questions.
 
 **Consolidate related material:**
 1. Identify the target document (usually the most developed one)
-2. Append content from source documents via `append_to_doc`
-3. Write provenance records for each source via `create_record` on `provenance`
+2. Append content from source documents via `insert_in_doc`
+3. Write provenance records for each source via `write_record` with `mode: "create"` on `provenance`
 4. Add wikilinks via `insert_doc_link`
 5. Archive the consolidated source documents
 
@@ -124,7 +124,7 @@ Group similar decisions to avoid death by a thousand questions.
 Going through old notes often reveals decisions that were made implicitly and never recorded. When you notice one: "This document implies a decision was made about X — want to capture that?" If yes, create a new document (typically a research note with status `resolved` or a spark tagged `#decision`) via Capture's flow.
 
 **Identify new connections:**
-When documents that were captured separately clearly relate to the same thread, present the connection to the user. If confirmed, write provenance via `create_record` on `provenance`.
+When documents that were captured separately clearly relate to the same thread, present the connection to the user. If confirmed, write provenance via `write_record` on `provenance`.
 
 The default resolution for anything unclear is **archive, not delete**. Nothing gets lost.
 
@@ -135,7 +135,7 @@ After a pass completes, offer the natural next step: "Want me to Brief you on th
 At the extreme end, Organize handles onboarding a large collection of existing documents from scattered folders, old note apps, or a previous tool. This is the same workflow at larger scale with more hand-holding:
 
 1. Have the user place (or point to) the documents in the vault
-2. Run `force_file_scan` to discover them
+2. Run `maintain_vault` to discover them
 3. Proceed through the three phases, expecting a higher proportion of ambiguous items
 4. Be patient with cryptic notes — the user may need to think about context that's been dormant for months
 

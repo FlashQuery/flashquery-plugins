@@ -2,7 +2,7 @@
 
 Use this workflow for operational hygiene on the vault: reconciling the database after bulk file moves outside the chat, emptying folders, duplicating docs as starting points, moving or renaming with identity preserved, and re-indexing when the scanner falls behind.
 
-These tools all preserve data in one way or another — moves keep the fqc_id, copies keep the source untouched, reconciliation marks missing files archived rather than deleting, and `remove_directory` refuses to clear anything non-empty. The skill's job is to choose the right tool for the user's intent and relay the critical warnings the tools emit.
+These tools all preserve data in one way or another — moves keep the fqc_id, copies keep the source untouched, maintenance repair reconciles document state, and `manage_directory(action: "remove")` refuses to clear anything non-empty. The skill's job is to choose the right tool for the user's intent and relay the critical warnings the tools emit.
 
 ## When to use
 
@@ -27,10 +27,8 @@ These tools all preserve data in one way or another — moves keep the fqc_id, c
 |------|---------|-------------------|
 | `move_document` | Rename/relocate a document | Yes — identity preserved |
 | `copy_document` | Duplicate a document as a starting point | No — copy gets a new fqc_id |
-| `create_directory` | Create a new directory (with intermediate paths) in the vault | n/a |
-| `remove_directory` | Safely remove an **empty** directory | n/a |
-| `reconcile_documents` | Resync the DB against the vault after external file changes | Yes — detects moves via fqc_id |
-| `force_file_scan` | Manually trigger the file scanner | n/a |
+| `manage_directory` | Create directories or safely remove **empty** directories | n/a |
+| `maintain_vault` | Sync external file changes, repair tracked document state, or inspect background jobs | Yes — maintenance preserves document identity where possible |
 
 ---
 
@@ -102,7 +100,7 @@ copy_document(
 ### Key behaviors to relay to the user
 
 - **Metadata is copied immutably.** Title, tags, and all custom frontmatter fields (e.g., `client`, `priority`) are copied as-is from the source. There is no way to customize the copy's metadata at creation time.
-- **To change title, tags, or custom fields on the copy,** call `update_doc_header` (for frontmatter) or `update_document` (for body + title) **after** copying. Set that expectation with the user up front — they usually want a modified copy, not a carbon copy.
+- **To change title, tags, custom fields, or body on the copy,** call `write_document(mode: "update")` after copying. Set that expectation with the user up front — they usually want a modified copy, not a carbon copy.
 - **Destination defaults to vault root.** Omitting `destination` lands the copy at the vault root, with the filename derived from the source title.
 
 ### Examples
@@ -124,44 +122,40 @@ copy_document(identifier: "templates/contact.md")
 ```
 copy_document(identifier: "templates/proposal.md", destination: "clients/beta/proposal.md")
 // then:
-update_doc_header(identifier: "clients/beta/proposal.md", updates: { client: "Beta", title: "Beta Proposal" })
+write_document(mode: "update", identifier: "clients/beta/proposal.md", title: "Beta Proposal", frontmatter: { client: "Beta" })
 ```
 
 ---
 
-## `create_directory` — create directories in the vault
+## `manage_directory` — create or remove directories in the vault
 
-Creates one or more vault directories. Uses `mkdir -p` semantics — intermediate directories are created automatically, so `create_directory(paths: "clients/acme/2026")` creates all three levels in a single call even if none exist yet.
+Creates or removes one or more vault directories. Creation uses recursive `mkdir` semantics, so `manage_directory(action: "create", paths: ["clients/acme/2026"])` creates all three levels in a single call even if none exist yet. Removal is empty-only; non-empty directories return a per-path conflict.
 
 ```
-create_directory(paths: "clients/acme/2026")
+manage_directory(action: "create", paths: ["clients/acme/2026"])
 ```
 
 **Batch creation with a shared root:**
 ```
-create_directory(
-  paths: ["contacts", "companies", "interactions"],
-  root_path: "CRM"
-)
+manage_directory(action: "create", paths: ["CRM/contacts", "CRM/companies", "CRM/interactions"])
 ```
 
 ### Behavior to relay
 
-- **Idempotent.** Calling on a directory that already exists succeeds — noted in the response as "already exists," not treated as an error. No confirmation needed before executing.
-- **`paths` is the parameter name** (plural) — accepts a single string or an array of strings. `root_path` is an optional vault-relative base prefix (default: vault root).
+- **Idempotent create.** Calling on a directory that already exists succeeds with `status: "unchanged"`, not as an error. No confirmation needed before executing.
+- **`paths` is always an array** of vault-relative directory paths. Duplicate paths execute sequentially in input order.
 - **Intermediate directories created automatically.** Deep paths like `"a/b/c/d"` create all missing levels.
-- **Illegal filesystem characters sanitized.** Segments with invalid characters are cleaned (spaces substituted); the response reports what was sanitized.
 - **Absolute paths rejected.** Paths starting with `/` are rejected — all paths are vault-relative.
-- **Non-destructive.** Unlike `remove_directory`, `create_directory` cannot destroy data. No confirmation needed before running.
+- **Non-destructive create.** Creation cannot destroy data. No confirmation needed before running.
 
 ---
 
-## `remove_directory` — delete an empty directory
+## `manage_directory(action: "remove")` — delete an empty directory
 
 Safely removes an empty directory. No recursion, no force. If the directory contains any files or subfolders, the tool errors and lists the contents.
 
 ```
-remove_directory(path: "archive/2024-old-projects")
+manage_directory(action: "remove", paths: ["archive/2024-old-projects"])
 ```
 
 ### Behavior to relay
@@ -171,13 +165,15 @@ remove_directory(path: "archive/2024-old-projects")
 
 ---
 
-## `reconcile_documents` — resync DB after external vault changes
+## `maintain_vault` — sync and repair after external vault changes
 
-Scans the database for documents whose vault file is missing on disk. When a document's `fqc_id` turns up at a different path (because the user moved files in Finder, git, etc.), the DB is updated to the new path. Files that remain permanently missing are marked as archived.
+Runs administrative maintenance. Use `action: "sync"` to scan external filesystem changes. Use `action: "repair"` to reconcile tracked document state. Use `action: ["repair", "sync"]` when both are needed; repair runs before sync. Use `action: "status"` with `job_id` to inspect a background sync job.
 
 ```
-reconcile_documents(dry_run: true)    // preview first — always recommended
-reconcile_documents()                 // then apply
+maintain_vault(action: ["repair", "sync"])
+maintain_vault(action: "repair", dry_run: true)
+maintain_vault(action: "sync", background: true)
+maintain_vault(action: "status", job_id: "...")
 ```
 
 ### When to run
@@ -188,50 +184,30 @@ reconcile_documents()                 // then apply
 
 ### Recommended pattern
 
-Always recommend `dry_run: true` first. Present the proposed changes (moves detected, files about to be marked archived) and confirm before running without `dry_run`.
+For repair, use `dry_run: true` first when the user is worried about changes. Present the proposed changes and confirm before running without `dry_run`.
 
-### Pair with `force_file_scan`
-
-Reconciliation focuses on DB-side cleanup. If new files were added outside the chat (not just moved), run `force_file_scan` first so the scanner picks them up, then run `reconcile_documents` to resolve any moves the scanner flagged.
+### Combined maintenance
 
 ```
-force_file_scan()
-reconcile_documents(dry_run: true)
-// review, then:
-reconcile_documents()
+maintain_vault(action: ["repair", "sync"], dry_run: false)
 ```
 
 ---
 
-## `force_file_scan` — manually trigger the scanner
+## `maintain_vault(action: "sync")` — manually trigger the scanner
 
 Re-indexes the vault. Useful when the user added files outside the chat and wants them visible immediately, or as a recovery step before reconciliation.
 
 ```
-force_file_scan()                      // synchronous; waits for the scan to complete
-force_file_scan(background: true)      // fire-and-forget; returns immediately
+maintain_vault(action: "sync")                      // synchronous; waits for the scan to complete
+maintain_vault(action: "sync", background: true)    // background job; returns job metadata
 ```
 
 ### Response format
 
-- **`background: false`** (default, synchronous): returns JSON
-  ```json
-  {
-    "status": "complete",
-    "new_files": N,
-    "updated_files": N,
-    "moved_files": N,
-    "deleted_files": N,
-    "status_mismatches": N
-  }
-  ```
-  Note: `updated_files` corresponds to hash mismatches — files whose content changed since the last scan.
-
-- **`background: true`**: returns immediately with
-  ```json
-  { "status": "started", "message": "..." }
-  ```
-  Results are only visible in server logs after that. Use when the user doesn't need the summary inline (e.g., they just want the scanner to catch up while they keep working).
+- **Synchronous sync** returns a structured JSON maintenance payload.
+- **Background sync** returns job metadata; inspect it later with `maintain_vault(action: "status", job_id: "...")`.
+- Do not expect low-level scanner internals such as queue depth, hashes, or per-document sync versions in the response.
 
 Pick synchronous when the user is about to do a search or browse that depends on the scan; background when the user is mid-conversation and the scan is a behind-the-scenes nicety.
 
@@ -242,12 +218,12 @@ Pick synchronous when the user is about to do a search or browse that depends on
 Most of these operations are reversible in principle but annoying in practice. Before running anything that moves, copies, removes, or reconciles in bulk, show the user what's about to happen:
 
 - For `move_document` / `copy_document` — name the source and destination, and mention any warnings the tool will emit (wikilinks, plugin ownership).
-- For `reconcile_documents` — run `dry_run: true` first and show the proposed changes.
-- For `remove_directory` — confirm the directory is empty and name the path.
+- For `maintain_vault(action: "repair")` — run `dry_run: true` first when repair could be surprising and show the proposed changes.
+- For `manage_directory(action: "remove")` — confirm the directory is empty and name the path.
 
 ## Error handling
 
 - **Write lock timeout** — retry once after 3 seconds; if persistent, pause and tell the user something else is writing to the vault.
 - **Destination already exists** (move/copy) — the tool errors rather than clobbering. Ask the user whether to pick a new name, archive the existing file first, or abort.
-- **`remove_directory` on a non-empty directory** — surface the listed contents and ask the user whether to move/archive them first.
-- **`reconcile_documents` reports permanently missing files** — explain that those will be marked archived on the next non-dry-run pass, and give the user the option to restore files from backup first if any of them were deleted accidentally.
+- **`manage_directory(action: "remove")` on a non-empty directory** — surface the conflict and ask the user whether to move/archive the contents first.
+- **`maintain_vault(action: "repair")` reports missing files** — explain the proposed repair before applying it and give the user the option to restore files from backup first if any of them were deleted accidentally.

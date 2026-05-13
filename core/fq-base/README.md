@@ -28,7 +28,7 @@ Orchestrates document creation, modification, memory management, and AI-assisted
 **Triggers on:** "find documents about," "what do we know about," "show me the notes from," "give me a briefing on," "what did I save about," "pull up that memory about," "how much have we spent on AI," "show me LLM usage," "what did the last skill run cost," and similar phrases.
 
 Orchestrates search and retrieval across your vault:
-- Unified search across documents and memories (`search_all`)
+- Unified search across documents and memories (`search`)
 - Document-focused search with tag/keyword/semantic modes
 - File and directory browsing by folder path and recency (`list_vault`)
 - Memory recall (semantic search + tag browsing)
@@ -70,15 +70,15 @@ Commands are slash commands you invoke explicitly.
 
 This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery instance must be running and connected for this plugin to work:
 
-**Document tools:** `create_document`, `get_document`, `update_document`, `archive_document`, `search_documents`, `move_document`, `copy_document`, `reconcile_documents`
+**Document tools:** `write_document`, `get_document`, `archive_document`, `remove_document`, `move_document`, `copy_document`, `search`, `maintain_vault`
 
-**Compound document tools:** `append_to_doc`, `insert_in_doc`, `replace_doc_section`, `update_doc_header`, `insert_doc_link`, `apply_tags`, `get_briefing`, `list_vault`, `search_all`
+**Compound document tools:** `insert_in_doc`, `replace_doc_section`, `insert_doc_link`, `apply_tags`, `get_briefing`, `list_vault`, `search`
 
-**Directory tools:** `create_directory`, `remove_directory`
+**Directory tools:** `manage_directory`
 
-**Memory tools:** `save_memory`, `search_memory`, `update_memory`, `get_memory`, `list_memories`, `archive_memory`
+**Memory tools:** `write_memory`, `get_memory`, `search`, `archive_memory`
 
-**Maintenance tools:** `force_file_scan`
+**Maintenance tools:** `maintain_vault`
 
 **LLM tools:** `call_model`, `get_llm_usage` — requires an `llm:` section in `flashquery.yml`. These tools are optional; the skills that use them degrade gracefully when LLM is not configured.
 

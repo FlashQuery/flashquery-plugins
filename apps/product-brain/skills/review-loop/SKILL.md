@@ -31,13 +31,13 @@ The output is a brief — what was routed, what was found, what questions need a
 
 ### 1. Initialize the run
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
 Retrieve the vault root, active project, and folder paths.
 
-Check for external file additions by calling `force_file_scan`. This updates the database index for any files added, moved, or deleted outside a skill invocation, ensuring `prodbrain_documents` is up to date before processing.
+Check for external file additions by calling `maintain_vault`. This updates the database index for any files added, moved, or deleted outside a skill invocation, ensuring `prodbrain_documents` is up to date before processing.
 
 ### 2. Determine what to process
 
@@ -71,17 +71,17 @@ For each spark in the inbox, make a routing decision. Read the spark's content v
 
 **Route to an existing research note** — when the spark's content clearly contributes to an existing research topic:
 
-a. Identify the target research note via `search_records` or `search_all`.
+a. Identify the target research note via `search_records` or `search`.
 
-b. Append the spark's content to the research note via `append_to_doc` — add it to the Findings section with a note about when and where it came from.
+b. Append the spark's content to the research note via `insert_in_doc` — add it to the Findings section with a note about when and where it came from.
 
 c. If the spark answers an open question, update the Open Questions section via `replace_doc_section` — move the answered question to Findings with the answer.
 
 d. Write provenance (dual-write):
-   - Call `create_record` on `provenance` with `source_fqc_id` = spark, `derived_fqc_id` = research note
-   - Call `insert_doc_link` with `identifier` = research note fqc_id, `target` = spark fqc_id, `property` = `"links"` to add the link to the research note's frontmatter
+   - Call `write_record` on `provenance` with `mode: "create"`, `source_fqc_id` = spark, `derived_fqc_id` = research note
+   - Call `insert_doc_link` with `identifiers` = research note fqc_id, `target_identifier` = spark fqc_id, `property` = `"links"` to add the link to the research note's frontmatter
 
-e. Archive the spark: call `archive_document` with `identifiers` = spark fqc_id to archive the vault file, then call `archive_record` with `plugin_id: "product-brain"`, `table: "documents"`, `id` = spark record id to archive the database record.
+e. Archive the spark: call `archive_document` with `identifiers` = spark fqc_id to archive the vault file, then call `archive_record` with `targets: [{ plugin_id: "product-brain", table: "documents", id: spark_record_id }]` to archive the database record.
 
 **Promote to a new document** — when the spark deserves its own document:
 
@@ -89,11 +89,11 @@ a. Determine the appropriate type (research note for exploratory topics, work it
 
 b. Look up the relevant template from `prodbrain_templates`.
 
-c. Create the new document via `create_document` in the appropriate folder (`research/`, `work/`, or `specs/`).
+c. Create the new document via `write_document` in the appropriate folder (`research/`, `work/`, or `specs/`).
 
-d. Register in `prodbrain_documents` via `create_record`.
+d. Register in `prodbrain_documents` via `write_record`.
 
-e. Write provenance if the new document was seeded from the spark: `create_record` on `provenance`.
+e. Write provenance if the new document was seeded from the spark: `write_record` on `provenance`.
 
 f. Read the tag vocabulary via `get_document` (`_plugin/tags.md`). Apply appropriate tags via `apply_tags`.
 
@@ -105,7 +105,7 @@ g. Archive the original spark (same as step e above for routing).
 
 For sparks or research notes that contain URLs or reference topics worth exploring, do a lightweight research pass. The goal is a few findings and a direction, not a comprehensive report.
 
-Append research findings to the relevant document via `append_to_doc`. If the findings suggest new open questions, add them to the Open Questions section via `replace_doc_section` (for research notes) or note them in the document body (for other types).
+Append research findings to the relevant document via `insert_in_doc`. If the findings suggest new open questions, add them to the Open Questions section via `replace_doc_section` (for research notes) or note them in the document body (for other types).
 
 ### 6. Check open questions
 
@@ -117,13 +117,13 @@ b. For each open question, check whether recent captures, vault content, or curs
 
 c. If progress is found, append findings to the Findings section and update Open Questions accordingly.
 
-d. If all open questions are resolved, update `prodbrain_documents` via `update_record` to set `has_open_questions: false`.
+d. If all open questions are resolved, update `prodbrain_documents` via `write_record` to set `has_open_questions: false`.
 
 ### 7. Surface connections
 
 Look for relationships between recently captured documents:
 
-Call `search_all` with queries derived from the key topics of recent captures. Check for semantic overlap between documents that were captured separately but relate to the same thread.
+Call `search` with queries derived from the key topics of recent captures. Check for semantic overlap between documents that were captured separately but relate to the same thread.
 
 Note connections in the brief output — don't write links automatically. Present them to the user: "The spark about X seems related to the research note on Y — want me to link them?"
 
@@ -131,7 +131,7 @@ Note connections in the brief output — don't write links automatically. Presen
 
 The Review Loop produces a pinned vault document (created once, updated each run):
 
-If no brief document exists yet, create it via `create_document` with:
+If no brief document exists yet, create it via `write_document` with:
 - `title`: `Review Loop Brief`
 - `path`: the project root (e.g., `product-brain/flashquery/`)
 
@@ -147,10 +147,11 @@ Keep it scannable. This is a summary the user can react to, not a document to st
 
 ### 9. Update review state
 
-Call `update_record` (or `create_record` on first run) with:
+Call `write_record` with:
+- `mode`: `"create"` on the first run, or `"update"` with the existing review_state record ID on later runs
 - `plugin_id`: `"product-brain"`
 - `table`: `"review_state"`
-- `fields`:
+- `data`:
   ```json
   {
     "project_id": "<active project id or null for all-project>",

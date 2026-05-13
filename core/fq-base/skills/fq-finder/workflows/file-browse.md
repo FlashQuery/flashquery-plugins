@@ -1,6 +1,6 @@
 # File Browse Workflow
 
-Use this workflow when the user wants to browse vault files and folders by path — the "what's in this folder" or "what changed recently" type of question. It's the natural complement to `search_documents`: filesystem-shaped navigation rather than content-shaped discovery.
+Use this workflow when the user wants to browse vault files and folders by path — the "what's in this folder" or "what changed recently" type of question. It's the natural complement to `search`: filesystem-shaped navigation rather than content-shaped discovery.
 
 ## When to use
 
@@ -24,7 +24,7 @@ Use this workflow when the user wants to browse vault files and folders by path 
 list_vault(
   path: "clients/acme",          // optional — vault-relative directory; default "/" (vault root)
   show: "all",                   // optional — "files", "directories", or "all" (default)
-  format: "table",               // optional — "table" (default, compact) or "detailed" (key-value blocks)
+  include: ["tracking"],          // optional — "metadata" for directory details, "tracking" for tracked document data
   recursive: true,               // optional; default false — walk the entire subtree
   extensions: [".md"],           // optional — array; case-insensitive; all file types supported
   after: "7d",                   // optional — modified/created ≥ this; relative ("7d", "24h", "1w") or ISO
@@ -38,7 +38,7 @@ list_vault(
 
 - **`path`** (string, optional, default `"/"`) — vault-relative directory to list. Examples: `"clients/acme"`, `"inbox"`, `"projects/q2"`. Omit or pass `""` / `"."` to list the vault root.
 - **`show`** (string, optional, default `"all"`) — what to include: `"files"` (files only), `"directories"` (directories only), or `"all"` (both). When `"directories"`, the `extensions` filter is silently ignored.
-- **`format`** (string, optional, default `"table"`) — output format. `"table"` produces a compact markdown table; `"detailed"` produces key-value blocks separated by `---`, including title, tags, and fqc_id for tracked files.
+- **`include`** (string[], optional, default `[]`) — optional payload sections. `"metadata"` adds directory created/children data. `"tracking"` adds tracked document title, tags, status, and fq_id.
 - **`recursive`** (boolean, optional, default `false`) — when `true`, walks the entire subtree under `path`. Leave off for a flat listing of just the immediate children.
 - **`extensions`** (string[], optional) — case-insensitive filter on file extension (e.g., `[".md", ".txt"]`). **This is an array, not a string.** All file types are supported (not just `.md`). Ignored when `show` is `"directories"`.
 - **`after`** (string, optional) — include entries modified/created on or after this moment. Accepts relative formats (`"7d"`, `"24h"`, `"1w"`) or ISO (`"2026-04-01"`, `"2026-04-01T15:30:00Z"`).
@@ -46,15 +46,9 @@ list_vault(
 - **`date_field`** (string, optional, default `"updated"`) — which timestamp `after`/`before` filter against: `"updated"` (default) or `"created"`. Use `"created"` to filter by when a file was first added to the vault.
 - **`limit`** (integer, optional, default `200`) — maximum number of entries to return. A truncation notice is appended if results exceed the limit.
 
-### Response formats
+### Response format
 
-**`format: "table"` (default)** — a compact markdown table with Name, Type, Size, Modified, and (for tracked files) fqc_id columns. Good for presenting vault contents to users.
-
-**`format: "detailed"`** — one key-value block per entry, blocks separated by `---`. Includes title, tags, fqc_id, size, and both created and updated timestamps for tracked files. Use this when you need fqc_id or tags for follow-up tool calls.
-
-Both formats end with a summary line: `Showing {N} of {total} entries in {path}/.`
-
-Untracked files (not in fqc_documents) appear with filesystem metadata only — no title, tags, or fqc_id. Both formats note this with an "untracked" marker.
+`list_vault` returns a structured JSON envelope with `path`, `total`, `displayed`, `truncated`, and `entries`. Entries contain filesystem data, and include-gated tracking data when requested. Untracked files appear with filesystem metadata only.
 
 ## Examples
 
@@ -88,24 +82,24 @@ list_vault(
 list_vault(path: "projects", show: "directories")
 ```
 
-**"Show recent markdown files across the whole vault with full metadata"**
+**"Show recent markdown files across the whole vault with tracking metadata"**
 ```
 list_vault(
   path: "",
   recursive: true,
   extensions: [".md"],
   after: "7d",
-  format: "detailed"
+  include: ["tracking"]
 )
 ```
 
 ## When results look suspiciously empty
 
-If the folder should contain files the user just added outside the chat, the scanner may not have picked them up yet. Run `force_file_scan()` to reindex, then retry `list_vault`. Pass `background: true` if the user doesn't need to see the scan summary inline — results appear in server logs.
+If the folder should contain files the user just added outside the chat, the scanner may not have picked them up yet. Run `maintain_vault(action: "sync")` to reindex, then retry `list_vault`. Pass `background: true` if the user doesn't need inline sync results, then inspect later with `maintain_vault(action: "status", job_id: "...")`.
 
 ```
-force_file_scan()          // synchronous; returns { status: "complete", new_files, updated_files, moved_files, deleted_files, status_mismatches }
-force_file_scan(background: true)   // fire-and-forget; returns immediately
+maintain_vault(action: "sync")
+maintain_vault(action: "sync", background: true)
 ```
 
 See [vault-maintenance](../../fq-organizer/workflows/vault-maintenance.md) in fq-organizer for the fuller picture of when scanning fits into a session.
@@ -117,4 +111,4 @@ See [vault-maintenance](../../fq-organizer/workflows/vault-maintenance.md) in fq
 1. **Group by subfolder** if `recursive: true` returned a wide tree — readable summaries beat flat lists once there are more than ~15 files.
 2. **Lead with dates** if the user asked a recency question — put the `updated` timestamp up front.
 3. **Offer a drill-in.** After showing what's in a folder, a natural next step is "want me to read any of these?" — answer via `get_document`, using `include: ["frontmatter", "headings"]` when structure is enough.
-4. **Choose format wisely.** Use `format: "detailed"` when you need `fqc_id` or tags for a follow-up tool call (e.g., `apply_tags`, `get_document` by UUID, `update_record`). Use `format: "table"` (default) when presenting results to the user — it's more readable.
+4. **Choose include data wisely.** Use `include: ["tracking"]` when you need `fq_id`, tags, or status for a follow-up tool call (e.g., `apply_tags`, `get_document` by UUID, `write_record`). Omit includes for a compact filesystem browse.

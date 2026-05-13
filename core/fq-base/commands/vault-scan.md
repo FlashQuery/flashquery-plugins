@@ -2,17 +2,17 @@
 description: Scan the FQC vault to discover new, moved, and deleted files
 ---
 
-Trigger an immediate FlashQuery Core vault scan by calling `force_file_scan`.
+Trigger an immediate FlashQuery Core vault scan by calling `maintain_vault` with `action: "sync"`.
 
 The user ran this because they added, moved, or modified files outside the conversation and need FQC to catch up.
 
 ## Instructions
 
 **Default (synchronous scan):**
-Call `force_file_scan(background: false)` and wait for results.
+Call `maintain_vault(action: "sync", background: false)` and wait for results.
 
 **If the user passed "background" as an argument ($ARGUMENTS contains "background"):**
-Call `force_file_scan(background: true)` and let the user know the scan is running in the background.
+Call `maintain_vault(action: "sync", background: true)` and let the user know the scan is running in the background. If a `job_id` is returned, mention that status can be checked with `maintain_vault(action: "status", job_id: "...")`.
 
 ## Reporting results
 
@@ -29,4 +29,4 @@ If there are lingering issues after the scan (documents still missing from searc
 
 ## Error handling
 
-If `force_file_scan` returns an error, report the message. Common causes: database connectivity issues, vault path misconfiguration. The scan is idempotent — safe to run multiple times.
+If `maintain_vault` returns an error, report the message. Common causes: database connectivity issues, vault path misconfiguration. The scan is idempotent — safe to run multiple times.

@@ -24,13 +24,13 @@ If no argument was provided, open with: "What kind of skill would you like to bu
 
 The skill body you produce must follow these FlashQuery conventions:
 
-- Use `fqc_id` (UUID), not file paths — parse it from `create_document` responses
+- Use `fqc_id` (UUID), not file paths — parse it from `write_document` responses
 - Check `isError` on every tool response before proceeding
 - Write lock recovery: retry once after a brief pause; inform the user on second failure
 - Tag conventions: `#status/*` prefix for status tags; one status tag per document; use `apply_tags` for incremental changes
-- Section editing over full rewrites: prefer `replace_doc_section` or `insert_in_doc` over `update_document` for partial changes
+- Section editing over full rewrites: prefer `replace_doc_section` or `insert_in_doc` over `write_document` for partial changes
 - Semantic search latency: newly created documents may not appear in semantic search immediately — this is normal
 
 ## Reference
 
-The full FlashQuery tool reference (all 35 tools, parameters, return values, examples) is available in the `fq-skill-creator:creator` skill at `references/flashquery-tools.md`. Use it to get exact parameter names and shapes when writing the new skill's tool call patterns.
+The full FlashQuery tool reference (current tools, parameters, return values, examples) is available in the `fq-skill-creator:creator` skill at `references/flashquery-tools.md`. Use it to get exact parameter names and shapes when writing the new skill's tool call patterns.

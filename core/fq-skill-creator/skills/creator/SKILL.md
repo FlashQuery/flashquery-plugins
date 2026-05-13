@@ -28,22 +28,22 @@ Before writing anything, clarify with the user:
 Map the skill's data requirements to FlashQuery tools using this decision guide:
 
 **The skill needs to save/retrieve long-form content (notes, reports, logs, articles)?**
-Use Document tools: `create_document`, `get_document`, `update_document`, `search_documents`, `list_vault`
+Use Document tools: `write_document`, `get_document`, `search`, `list_vault`
 
 **The skill needs to remember facts, preferences, or observations across sessions?**
-Use Memory tools: `save_memory`, `search_memory`, `list_memories`, `update_memory`
+Use Memory tools: `write_memory`, `search`, `get_memory`, `archive_memory`
 
 **The skill needs structured data with custom fields (contacts, tasks, inventory, etc.)?**
-Use Record tools with a plugin schema: `register_plugin`, `create_record`, `get_record`, `update_record`, `search_records`
+Use Record tools with a plugin schema: `register_plugin`, `write_record`, `get_record`, `search_records`
 
 **The skill needs to search across everything at once?**
-Use `search_all` for unified document + memory search
+Use `search` for unified document + memory search
 
 **The skill needs to organize content (tagging, linking, archiving)?**
 Use Compound tools: `apply_tags`, `insert_doc_link`, `archive_document`, `archive_memory`
 
 **The skill needs to create vault directories for organizing output documents?**
-Use `create_directory` — it accepts a single path string or an array of paths, creates intermediate directories automatically (`mkdir -p`), and is idempotent (calling on an existing directory succeeds without error).
+Use `manage_directory` — it accepts `action` (`"create"` or `"remove"`) and `paths` as an array of vault-relative paths. Create makes intermediate directories automatically and is idempotent; remove only removes empty directories.
 
 **The skill needs to watch vault folders for new files and process them periodically (template application, classification, routing)?**
 Use `clear_pending_reviews` on a `/loop` or scheduled cron. Set up the plugin schema with `documents.types` entries and `on_added: auto-track` so FlashQuery auto-discovers files mechanically. The skill then queries the pending review queue, processes each item, and clears it. See "Building a pull-based document processing skill" below, and read [references/example-pull-processor.md](references/example-pull-processor.md) for a complete annotated schema YAML and skill composition guide.
@@ -57,7 +57,7 @@ When writing the skill body (the SKILL.md for the new skill), include:
 1. **Tool surface** — list which `mcp__flashquery__*` tools the skill uses and why
 2. **Tool call patterns** — show the exact parameter shapes for common operations so the model using the skill doesn't have to guess
 3. **Error handling** — include recovery patterns for common failures (write locks, missing files, tag conflicts)
-4. **Conventions** — always prefer `fqc_id` over paths for document references; parse `fqc_id` from `create_document` responses
+4. **Conventions** — always prefer `fqc_id` over paths for document references; parse `fqc_id` from `write_document` responses
 
 ### Step 4: Delegate to the skill-creator
 
@@ -67,7 +67,7 @@ Once you've drafted the skill with FlashQuery tools wired in, use the standard `
 
 These conventions should be embedded in any skill that uses FlashQuery tools:
 
-1. **Use `fqc_id` (UUID), not file paths** — paths change when users move files; UUIDs are stable. After `create_document`, parse the `fqc_id` from the response and store it for later reference.
+1. **Use `fqc_id` (UUID), not file paths** — paths change when users move files; UUIDs are stable. After `write_document`, parse the `fqc_id` from the response and store it for later reference.
 
 2. **Check `isError` on every tool response** — FlashQuery tools return structured responses. Always check for errors before proceeding.
 
@@ -79,7 +79,7 @@ These conventions should be embedded in any skill that uses FlashQuery tools:
 
 6. **Plugin registration for structured data** — if the skill needs custom tables (beyond documents and memories), it must register a plugin schema first via `register_plugin`. Define the schema in YAML and include it in the skill's bundled resources.
 
-7. **Section editing over full rewrites** — when modifying part of a document, prefer `replace_doc_section` or `insert_in_doc` over `update_document`. Targeted edits preserve surrounding content and avoid unnecessary re-embedding.
+7. **Section editing over full rewrites** — when modifying part of a document, prefer `replace_doc_section` or `insert_in_doc` over `write_document`. Targeted edits preserve surrounding content and avoid unnecessary re-embedding.
 
 ## FlashQuery tool reference (summary)
 
@@ -88,11 +88,11 @@ The complete reference with all parameters and return values is in [references/f
 ### Document tools
 | Tool | Purpose |
 |------|---------|
-| `create_document` | Create a new markdown document in the vault |
+| `write_document` | Create or update a markdown document with explicit `mode` |
 | `get_document` | Read document content by path, fqc_id, or filename (supports section extraction) |
-| `update_document` | Overwrite document body and/or frontmatter (full body replace) |
 | `archive_document` | Soft-delete one or more documents (accepts single or array) |
-| `search_documents` | Search by keyword, semantic similarity, or tags |
+| `remove_document` | Archive then trash/delete one or more documents |
+| `search` | Search by keyword, semantic similarity, or tags |
 | `copy_document` | Duplicate a document to a new destination |
 | `move_document` | Move or rename a document to a new vault path |
 | `list_vault` | Browse vault files and directories by path with filtering by extensions, date, and type |
@@ -100,21 +100,18 @@ The complete reference with all parameters and return values is in [references/f
 ### Section and metadata editing tools
 | Tool | Purpose |
 |------|---------|
-| `append_to_doc` | Append content to end of document |
 | `insert_in_doc` | Insert content at a specific position (top, bottom, after/before heading, end of section) |
 | `replace_doc_section` | Replace content of a named section |
-| `update_doc_header` | Update frontmatter fields without touching body |
+| `write_document` | Update frontmatter fields without touching body |
 | `apply_tags` | Add or remove tags on documents or memories (supports batch) |
 | `insert_doc_link` | Add a wiki-style link to another document in frontmatter |
 
 ### Memory tools
 | Tool | Purpose |
 |------|---------|
-| `save_memory` | Store a persistent fact or observation |
-| `search_memory` | Search memories by semantic similarity |
-| `list_memories` | List memories with optional tag filtering (no query needed) |
+| `write_memory` | Create or version-update a persistent fact or observation |
+| `search` | Search or list memories with `entity_types: ["memories"]` |
 | `get_memory` | Retrieve one or more memories by ID (supports batch) |
-| `update_memory` | Create a new version of an existing memory |
 | `archive_memory` | Soft-delete a memory |
 
 ### Record tools (for plugin-registered tables)
@@ -122,26 +119,23 @@ The complete reference with all parameters and return values is in [references/f
 |------|---------|
 | `register_plugin` | Register or update a plugin schema (creates tables) |
 | `get_plugin_info` | Get schema and table details for a plugin |
-| `unregister_plugin` | Remove a plugin and its database resources |
-| `create_record` | Create a new record in a plugin table |
+| `unregister_plugin` | Remove plugin registry state; `force: true` leaves live rows orphaned |
+| `write_record` | Create or update a record in a plugin table |
 | `get_record` | Retrieve a single record by ID |
-| `update_record` | Update specific fields on a record |
 | `archive_record` | Soft-delete a record |
 | `search_records` | Search records by keyword or semantic similarity |
 
 ### Cross-resource tools
 | Tool | Purpose |
 |------|---------|
-| `search_all` | Search documents and memories simultaneously (supports entity_types filter) |
+| `search` | Search documents and memories simultaneously (supports entity_types filter) |
 | `get_briefing` | Get tag-scoped overview of documents, memories, and optionally plugin records |
 
 ### Vault maintenance tools
 | Tool | Purpose |
 |------|---------|
-| `force_file_scan` | Trigger vault scan for new/moved/deleted files |
-| `reconcile_documents` | Fix database/filesystem inconsistencies |
-| `create_directory` | Create one or more directories in the vault (mkdir -p, idempotent) |
-| `remove_directory` | Remove an empty directory from the vault |
+| `maintain_vault` | Sync, repair, or inspect vault maintenance jobs |
+| `manage_directory` | Create directories or remove empty directories |
 | `clear_pending_reviews` | Query or clear pending review items |
 
 ## Example: What a FlashQuery-powered skill looks like
@@ -155,12 +149,13 @@ Here's a simplified example of how a skill body references FlashQuery tools. Thi
 - Searching across existing intake records
 - Saving follow-up reminders as memories
 
-Tool surface: `create_document`, `get_document`, `search_documents`,
-`apply_tags`, `save_memory`, `search_memory`
+Tool surface: `write_document`, `get_document`, `search`,
+`apply_tags`, `write_memory`, `search`
 
 ## Creating an intake document
 
-Call `mcp__flashquery__create_document` with:
+Call `mcp__flashquery__write_document` with:
+- `mode`: "create"
 - `title`: "Intake: {client name} - {date}"
 - `content`: the formatted intake notes (markdown)
 - `path`: "clients/{client-slug}/intake.md"
@@ -170,9 +165,10 @@ Parse `fqc_id` from the response and use it for all subsequent references.
 
 ## Searching past intakes
 
-Call `mcp__flashquery__search_documents` with:
+Call `mcp__flashquery__search` with:
 - `query`: the user's search terms
 - `tags`: ["#type/intake"]
+- `entity_types`: ["documents"]
 - `mode`: "mixed" (combines keyword + semantic)
 - `limit`: 10
 
@@ -180,7 +176,8 @@ Follow up on high-confidence results with `get_document` to pull full content.
 
 ## Saving a follow-up reminder
 
-Call `mcp__flashquery__save_memory` with:
+Call `mcp__flashquery__write_memory` with:
+- `mode`: "create"
 - `content`: "Follow up with {client} about {topic} by {date}"
 - `tags`: ["follow-up", "client-intake"]
 ```
@@ -191,7 +188,7 @@ If the skill manages structured records (not just documents and memories), it ne
 
 1. Define the schema as YAML — include it in the skill's `references/` or `assets/` directory
 2. The skill body should instruct the model to call `register_plugin` with either `schema_path` or `schema_yaml` on first use
-3. After registration, the skill uses `create_record`, `get_record`, `update_record`, `search_records`, and `archive_record` with the `plugin_id` and `table` name
+3. After registration, the skill uses `write_record`, `get_record`, `write_record`, `search_records`, and `archive_record` with the `plugin_id` and `table` name
 
 ### Basic schema (records only)
 
@@ -245,7 +242,7 @@ documents:
         title: name
         tags: tags
       on_moved: keep-tracking         # keep-tracking (default) or untrack
-      on_modified: sync-fields        # sync-fields or ignore (default)
+      on_modified: sync-data        # sync-data or ignore (default)
 
 tables:
   - name: items
@@ -286,7 +283,7 @@ documents:
         title: name
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: crm-companies
       folder: CRM/Companies
@@ -297,7 +294,7 @@ documents:
         title: name
         tags: tags
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     - id: crm-inbox
       folder: CRM/Inbox
@@ -357,9 +354,9 @@ The reconciler routes new files to the right table based on which folder they la
 | `on_added` | `ignore` (default), `auto-track` | What happens when a genuinely new file appears in the folder (no existing plugin row for its `fqc_id`). `auto-track`: FlashQuery creates the plugin table row, writes `fqc_owner`/`fqc_type` to the document's frontmatter, populates columns via `field_map`, and inserts a pending review row if `template` is declared. Requires `track_as`. `ignore`: file is visible in `fqc_documents` but the plugin doesn't track it. |
 | `track_as` | plugin table name | Which plugin table to insert into when auto-tracking. Must match a `tables` entry. Required when `on_added: auto-track`. |
 | `template` | filename string | A template hint for the plugin's skill. FlashQuery stores this as metadata and surfaces it in pending review rows (`review_type: 'template_available'`, `context.template` contains this filename). The skill (not FlashQuery) reads, applies, and merges the template with the document. The template file's location is entirely the skill's domain — put it in the skill's `references/` or `assets/` directory and reference it by path in the skill instructions. FlashQuery never reads the template file; it only stores the name as a routing hint. Optional. |
-| `field_map` | object (frontmatter key → column name) | Maps frontmatter fields to plugin table columns. Applied during auto-track (initial population), sync-fields (on modification), and resurrection (re-sync after return). If a mapped field is absent from the document, the column is set to NULL. |
+| `field_map` | object (frontmatter key → column name) | Maps frontmatter fields to plugin table columns. Applied during auto-track (initial population), sync-data (on modification), and resurrection (re-sync after return). If a mapped field is absent from the document, the column is set to NULL. |
 | `on_moved` | `keep-tracking` (default), `untrack` | What happens when a tracked document moves outside this folder (frontmatter association still intact). `keep-tracking`: update the stored path, keep tracking. `untrack` (also `stop-tracking`): archive the plugin row (resurrectable later). Note: `ignore` is not a valid value — both options produce a stable end state so the reconciler converges. |
-| `on_modified` | `ignore` (default), `sync-fields` | What happens when a tracked document's `updated_at` or content hash changes. `sync-fields`: re-read frontmatter, re-apply `field_map`, update `last_seen_updated_at`. `ignore`: only updates `last_seen_updated_at` (prevents re-flagging on every cycle). |
+| `on_modified` | `ignore` (default), `sync-data` | What happens when a tracked document's `updated_at` or content hash changes. `sync-data`: re-read frontmatter, re-apply `field_map`, update `last_seen_updated_at`. `ignore`: only updates `last_seen_updated_at` (prevents re-flagging on every cycle). |
 
 **Always-mechanical responses** (no policy field needed — FlashQuery always handles these):
 - `deleted`: document is `missing` or `archived` → plugin row is archived
@@ -383,11 +380,11 @@ When a skill needs to watch folders and process new files (apply templates, clas
 
 1. The plugin schema declares `documents.types` entries with `on_added: auto-track`
 2. The user drops a file into a watched folder (outside any conversation)
-3. A **scanner run** (`force_file_scan`) picks up the file and registers it in `fqc_documents`
-4. A **record tool call** (any of: `search_records`, `create_record`, `get_record`, `update_record`, `archive_record`) triggers `reconcilePluginDocuments()` internally — this detects the new `fqc_documents` entry, auto-tracks it (creates the plugin row, writes `fqc_owner`/`fqc_type` frontmatter), and inserts a pending review row into `fqc_pending_plugin_review`
+3. A **scanner run** (`maintain_vault`) picks up the file and registers it in `fqc_documents`
+4. A **record tool call** (any of: `search_records`, `write_record`, `get_record`, `write_record`, `archive_record`) triggers `reconcilePluginDocuments()` internally — this detects the new `fqc_documents` entry, auto-tracks it (creates the plugin row, writes `fqc_owner`/`fqc_type` frontmatter), and inserts a pending review row into `fqc_pending_plugin_review`
 5. The skill (running on `/loop` or scheduled cron) calls `clear_pending_reviews` to read the queue, processes each item (applies template, classifies, routes), then clears the processed IDs
 
-**Critical dependency:** `clear_pending_reviews` reads the `fqc_pending_plugin_review` table but does **not** itself trigger a vault scan or reconciliation. Pending items only appear in that table after steps 3 and 4 have both run. A scheduled skill that calls `clear_pending_reviews` cold (without first scanning and reconciling) will find nothing if no in-conversation record tool call happened between the file drop and the scheduled run. The fix: always call `force_file_scan` and then a record tool before querying pending reviews.
+**Critical dependency:** `clear_pending_reviews` reads the `fqc_pending_plugin_review` table but does **not** itself trigger a vault scan or reconciliation. Pending items only appear in that table after steps 3 and 4 have both run. A scheduled skill that calls `clear_pending_reviews` cold (without first scanning and reconciling) will find nothing if no in-conversation record tool call happened between the file drop and the scheduled run. The fix: always call `maintain_vault` and then a record tool before querying pending reviews.
 
 This is the replacement for the old `on_document_discovered` push callback pattern. Data integrity (row creation, frontmatter writes, field sync) is always mechanical. The skill only handles the AI-requiring tasks: template application, content classification, and routing decisions.
 
@@ -400,14 +397,14 @@ This is the replacement for the old `on_document_discovered` push callback patte
 
 This skill runs on a schedule (via /loop or cron). On each invocation:
 
-1. Sync the vault — call `force_file_scan({})` to pick up any files dropped since the last run.
+1. Sync the vault — call `maintain_vault({ action: "sync" })` to pick up any files dropped since the last run.
 
 2. Trigger reconciliation — call `search_records({ plugin_id: "my-plugin", table: "items" })`
    with a minimal query (limit: 1 is fine). This causes FlashQuery to diff the watched folders
    against fqc_documents, auto-track any new files, and insert pending review rows.
    The response will also surface any pending items inline.
 
-3. Query the pending queue — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: [] })`.
+3. Query the pending queue — call `clear_pending_reviews({ action: "list", plugin_id: "my-plugin" })`.
    If the response lists no pending items, do nothing and exit.
 
 4. For each pending item (process in batches of 5–10):
@@ -415,13 +412,13 @@ This skill runs on a schedule (via /loop or cron). On each invocation:
    - Check `item.review_type`:
      - `template_available`: load the template from `item.context.template`
        (find it in the skill's references/ or assets/ directory), merge it with the
-       document's existing content, write back with `update_document`
+       document's existing content, write back with `write_document`
      - `new_document`: classify and route the document — move to appropriate folder,
-       apply tags, update plugin record fields via `update_record`
-     - `resurrected`: verify the document is still valid, update any stale fields
+       apply tags, update plugin record data via `write_record`
+     - `resurrected`: verify the document is still valid, update any stale data
    - If no action is needed (document already structured), clear it anyway
 
-5. Clear processed items — call `clear_pending_reviews({ plugin_id: "my-plugin", fqc_ids: processed_ids })`
+5. Clear processed items — call `clear_pending_reviews({ action: "clear", plugin_id: "my-plugin", ids: processed_review_ids })`
    to remove them from the queue and confirm what remains.
 
 6. If items remain, the next scheduled invocation picks them up (incremental batching).

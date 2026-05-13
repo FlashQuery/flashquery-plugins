@@ -47,13 +47,13 @@ get_briefing(tags: ["#client/acme", "#type/proposal"], tag_match: "all")   // mu
 
 5. **Present the briefing as a synthesized summary** — not a raw dump. Cover: what documents exist, what memories are relevant, notable status items.
 
-## When `get_briefing` vs `search_all`
+## When `get_briefing` vs `search`
 
 | Situation | Prefer |
 |-----------|--------|
 | Clear topic with known tags | `get_briefing` — scoped, structured |
-| Natural-language query without clear tags | `search_all` — semantic, unscoped |
-| Documents only | `search_documents` |
+| Natural-language query without clear tags | `search` — semantic, unscoped |
+| Documents only | `search` |
 | Pre-meeting orientation | `get_briefing` |
 
 ## Example

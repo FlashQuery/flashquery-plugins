@@ -8,16 +8,16 @@ Use when the user wants to retire a set of documents — archiving them so they'
 - "Clean up old drafts"
 - "Retire all the cancelled project docs"
 
-## Tool sequence: `search_documents` → confirm → `archive_document`
+## Tool sequence: `search` → confirm → `archive_document`
 
 ### 1. Find the candidate set
 
 ```
 // By tag
-search_documents(tags: ["#project/old-site"], mode: "filesystem", limit: 50)
+search(tags: ["#project/old-site"], mode: "filesystem", limit: 50)
 
 // By topic
-search_documents(query: "old pricing model", mode: "mixed", limit: 20)
+search(query: "old pricing model", mode: "mixed", limit: 20)
 ```
 
 For "archive anything older than X months," filesystem mode sorts by last-modified date — present documents with dates so the user can make informed decisions.

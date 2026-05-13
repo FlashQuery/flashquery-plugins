@@ -2,17 +2,17 @@
 description: Reconcile the FQC database against the vault filesystem
 ---
 
-Verify every FQC database row against the current vault filesystem by calling `reconcile_documents`.
+Verify every FQC database row against the current vault filesystem by calling `maintain_vault` with `action: "repair"`.
 
 The user ran this because they suspect the database has drifted from the vault — files were moved, renamed, or deleted outside FQC, and search results feel wrong or incomplete.
 
 ## Instructions
 
 **Default:**
-Call `reconcile_documents(dry_run: false)`.
+Call `maintain_vault(action: "repair", dry_run: false)`.
 
 **If the user passed "dry-run" as an argument ($ARGUMENTS contains "dry-run"):**
-Call `reconcile_documents(dry_run: true)` to preview changes without applying them. Prefix your report with "[DRY RUN]" and offer to run the real reconcile if the preview looks correct.
+Call `maintain_vault(action: "repair", dry_run: true)` to preview changes without applying them. Prefix your report with "[DRY RUN]" and offer to run the real repair if the preview looks correct.
 
 ## What reconcile does
 
@@ -42,4 +42,4 @@ If the user is unsure which to run, suggest `/fq-base:vault-health` — it runs 
 
 ## Performance note
 
-`reconcile_documents` scans the entire vault to build an fqc_id index. Let the user know it may take a moment on large vaults. The operation is idempotent — safe to run multiple times.
+`maintain_vault(action: "repair")` may take a moment on large vaults. The operation is idempotent — safe to run multiple times.

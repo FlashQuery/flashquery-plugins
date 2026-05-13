@@ -1,1480 +1,251 @@
 # FlashQuery MCP Tool Reference
 
-Complete reference for all FlashQuery MCP tools. When writing skills that use FlashQuery, call these tools with the prefix `mcp__flashquery__` (e.g., `mcp__flashquery__create_document`).
+Current reference for FlashQuery MCP tools. The FlashQuery source repo is the source of truth; this file reflects the current consolidated tool surface. FlashQuery does not alias removed legacy tool names.
 
-All tools return JSON responses. Always check `isError` before processing results.
+All MCP tool responses use the standard envelope `{ content: [{ type: "text", text: "..." }] }`. Most FlashQuery tools put JSON in `content[0].text`. Expected domain errors usually return a JSON error payload in that text; runtime errors may set `isError: true`.
 
----
+## Current Tools
 
-## Table of Contents
+### Documents
 
-- [Document Management](#document-management)
-- [Section and Metadata Editing](#section-and-metadata-editing)
-- [Memory Management](#memory-management)
-- [Record Management](#record-management)
-- [Plugin Management](#plugin-management)
-- [Cross-Resource Tools](#cross-resource-tools)
-- [Vault Maintenance](#vault-maintenance)
-- [LLM Tools](#llm-tools)
+#### `write_document`
 
----
+Create or update one markdown document.
 
-## Document Management
+Required patterns:
+- Create: `mode: "create"`, `path`, `title`; optional `content`, `frontmatter`, `tags`.
+- Update: `mode: "update"`, `identifier`; at least one of `content`, `title`, `frontmatter`, or `tags`.
+- `tags` replaces the full tag list. Use `apply_tags` for additive/removal tag edits.
+- `frontmatter` accepts custom fields only. Managed data such as `fq_id`, `fqc_id`, `status`, `created`, `updated`, tags, and instance identifiers are rejected.
 
-### create_document
-
-Create a new markdown document in the vault. Provide a title, optional body content, optional tags, and an optional vault-relative path to control where it's saved. Defaults to vault root if no path is given. Returns the new document's fqc_id, path, and metadata.
-
-Use this when the user wants to start a new document, note, record, or page.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `title` | string | yes | Document title |
-| `content` | string | yes | Document body (markdown). Pass `""` to create an empty document. |
-| `path` | string | no | Vault-relative path (e.g., "clients/acme/notes.md"). Defaults to vault root. |
-| `tags` | string[] | no | Tags for categorization |
-| `frontmatter` | object | no | Additional frontmatter fields. Cannot override fqc_id, status, created, or fqc_instance. |
-
-**Returns:** Document `fqc_id` (UUID), path, title, tags, and status.
-
-**Example:**
-```
-mcp__flashquery__create_document({
-  title: "Intake: Acme Corp - 2026-04-21",
-  content: "## Background\n\nAcme Corp reached out about...",
-  path: "clients/acme/intake.md",
-  tags: ["#type/intake", "#status/new"]
+Example:
+```js
+mcp__flashquery__write_document({
+  mode: "create",
+  path: "projects/acme/brief.md",
+  title: "Acme Brief",
+  content: "# Acme Brief\n\n...",
+  tags: ["#project/acme"]
 })
 ```
 
-**Usage notes:**
-- Parse `fqc_id` from the response — use it for all subsequent references to this document (not the path).
-- If a file already exists at the path, the call will fail. Use `update_document` or `append_to_doc` instead.
-
----
-
-### get_document
-
-Read one or more documents by path, fqc_id, or filename. Use `include` to request any combination of body, frontmatter, and headings. To read only specific sections instead of the full body, pass a `sections` array with heading names — this is far more token-efficient for large documents. For document structure and frontmatter without body content, call this tool with `include: ["frontmatter", "headings"]`.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifiers` | string or string[] | yes | Document path, fqc_id UUID, filename, or an array of those. Array input returns per-element success/error objects. |
-| `include` | string[] | no | Fields to include: `"body"`, `"frontmatter"`, `"headings"`. Default: `["body"]`. |
-| `sections` | string[] | no | Heading names to extract (e.g., ["Configuration", "Examples"]). Requires `"body"` in `include`. |
-| `include_nested` | boolean | no | If true (default), include all nested content under heading until next same-or-higher heading. If false, stop at first subheading. |
-| `occurrence` | number | no | Which occurrence of heading if multiple share the same name (1-indexed). Default: 1 |
-| `max_depth` | number | no | Maximum heading depth to include when requesting headings (1-6). Default: 6. |
-| `follow_ref` | string | no | Dot-separated frontmatter path whose value should be resolved as another document identifier. |
-
-**Returns:** JSON envelope with metadata (`identifier`, `title`, `path`, `fq_id`, `modified`, `size.chars`) plus requested body/frontmatter/headings. Batch input returns an array with per-element errors.
-
-**Example — full document:**
-```
-mcp__flashquery__get_document({
-  identifiers: "clients/acme/intake.md"
-})
-```
-
-**Example — structure only:**
-```
-mcp__flashquery__get_document({
-  identifiers: "clients/acme/intake.md",
-  include: ["frontmatter", "headings"]
-})
-```
-
-**Example — specific section only:**
-```
-mcp__flashquery__get_document({
-  identifiers: "a1b2c3d4-...",
-  include: ["body"],
-  sections: ["Background", "Next Steps"],
-  include_nested: true
-})
-```
-
-**Usage notes:**
-- The `identifiers` value is flexible: "clients/acme/notes.md", a UUID, or just "notes.md" all work. UUIDs are most reliable.
-- Use `sections` to pull only what you need — avoids loading entire large documents into context.
-
----
-
-### update_document
-
-Overwrite an existing document's body content and/or frontmatter fields. Replaces the entire body when `content` is provided — use `replace_doc_section` or `insert_in_doc` for targeted section edits instead. Does not create a new document — use `create_document` for that.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `content` | string | no | New document body (markdown). Replaces entire body. If omitted, body is preserved unchanged. |
-| `title` | string | no | New title. If omitted, existing title is preserved. |
-| `tags` | string[] | no | Replacement tag list. Replaces all existing tags. If omitted, tags are preserved. |
-| `frontmatter` | object | no | Additional frontmatter fields to merge. Cannot override fqc_id, fqc_instance, created, or status. |
-
-**Returns:** Confirmation with updated metadata.
-
-**Example:**
-```
-mcp__flashquery__update_document({
-  identifier: "a1b2c3d4-...",
-  content: "## Revised Background\n\nAfter our call...",
-  title: "Intake: Acme Corp - Revised"
-})
-```
-
-**Usage notes:**
-- This replaces the entire body and triggers re-embedding. For targeted edits, prefer `replace_doc_section` or `insert_in_doc`.
-- For tag changes, prefer `apply_tags` — it supports incremental add/remove without replacing the entire tag list.
-
----
-
-### archive_document
-
-Archive one or more documents by setting their status to "archived". The file remains in the vault and its fqc_id is preserved — nothing is deleted. Archived documents are excluded from search results. Use this when the user is done with a document but may want to reference it later.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifiers` | string or string[] | yes | One or more document identifiers — each can be a vault-relative path, fqc_id UUID, or filename. Pass a single string or an array for batch archival. |
-
-**Returns:** Confirmation message.
-
-**Example — single document:**
-```
-mcp__flashquery__archive_document({
-  identifiers: "clients/acme/old-notes.md"
-})
-```
-
-**Example — batch archival:**
-```
-mcp__flashquery__archive_document({
-  identifiers: ["a1b2c3d4-...", "e5f6g7h8-..."]
-})
-```
-
-**Usage notes:**
-- The parameter is `identifiers` (plural), not `identifier`. It accepts a single string or an array.
-
----
-
-### search_documents
-
-Search vault documents by semantic query, tags, or text substring. Returns ranked results with title, path, fqc_id, tags, and match score. Excludes archived documents. Use this when the user asks to find, search for, or look up documents. For browsing by folder structure instead of searching, use `list_vault`.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `query` | string | no | Substring search on title or path (case-insensitive). Optional when filtering by tags alone. |
-| `tags` | string[] | no | Filter results by tags |
-| `tag_match` | "any" or "all" | no | How to combine multiple tags. "any" (default): at least one tag matches. "all": every tag must be present. |
-| `mode` | "filesystem" or "semantic" or "mixed" | no | Search strategy. "filesystem" (default): frontmatter scan. "semantic": vector similarity via pgvector. "mixed": both combined (semantic-ranked first, unindexed appended). |
-| `limit` | number | no | Maximum results. Default: 20 |
-
-**Returns:** List of documents with path, title, tags, fqc_id, and match scores.
-
-**Example — keyword search:**
-```
-mcp__flashquery__search_documents({
-  query: "acme",
-  mode: "filesystem"
-})
-```
-
-**Example — semantic search with tag filter:**
-```
-mcp__flashquery__search_documents({
-  query: "client onboarding process",
-  tags: ["#type/intake"],
-  mode: "mixed",
-  limit: 10
-})
-```
-
-**Example — tag-only filter (no search query):**
-```
-mcp__flashquery__search_documents({
-  tags: ["#status/draft"],
-  tag_match: "all"
-})
-```
-
-**Usage notes:**
-- The parameter is `mode`, not `search_mode`.
-- `query` is optional — you can search by tags alone.
-- `"mixed"` combines keyword and semantic search for best coverage.
-- `"semantic"` uses vector embeddings — good for conceptual similarity but won't find exact phrases.
-- `"filesystem"` is keyword/path-based — fast and exact but no conceptual understanding.
-
----
-
-### copy_document
-
-Copy a vault document to a new location, creating a new document with its own fqc_id and fresh timestamps. The copy preserves the source title, tags, and all custom frontmatter fields. The original document is not modified.
-
-Use this when the user wants to duplicate a document as a starting point — e.g., creating a new contact from a template.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Source document path, fqc_id UUID, or filename |
-| `destination` | string | no | Vault-relative path for the copy. Defaults to vault root using source title as filename. |
-
-**Returns:** New document's `fqc_id`, path, and metadata.
-
-**Example:**
-```
-mcp__flashquery__copy_document({
-  identifier: "templates/intake-template.md",
-  destination: "clients/newcorp/intake.md"
-})
-```
-
-**Usage notes:**
-- The parameter is `destination`, not `new_path` or `new_title`.
-- No title or tag customization at copy time — the copy inherits everything from the source. Modify afterwards with `update_document` or `apply_tags` if needed.
-
----
-
-### move_document
-
-Move or rename a document in the vault while preserving its fqc_id, history, and all plugin associations. Creates intermediate directories automatically. Renaming is a special case — move to the same directory with a different filename.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Source document path, fqc_id UUID, or filename |
-| `destination` | string | yes | Vault-relative destination path including filename (extension optional — uses source extension if omitted) |
-
-**Returns:** Confirmation with new path.
-
-**Example — move to new folder:**
-```
-mcp__flashquery__move_document({
-  identifier: "inbox/meeting-notes.md",
-  destination: "clients/acme/meeting-notes.md"
-})
-```
-
-**Example — rename in place:**
-```
-mcp__flashquery__move_document({
-  identifier: "clients/acme/notes.md",
-  destination: "clients/acme/intake-notes.md"
-})
-```
-
-**Usage notes:**
-- The parameter is `destination`, not `new_path`.
-- The document's identity (fqc_id) is preserved — no data is lost.
-- References to this document in other files are NOT automatically updated.
-
----
-
-### list_vault
-
-Browse vault files and directories by path. Returns file metadata (title, tags, fqc_id, size, timestamps) for tracked files, and filesystem metadata for untracked files. Supports recursive listing, multi-extension filtering, date filtering on updated or created timestamps, directory-only or file-only views, and table or detailed output formats.
-
-Use this when the user asks "what's in this folder," "what changed recently," or "show me the subdirectories." For finding documents by content or tags, use `search_documents` instead.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `path` | string | no | Vault-relative directory path. Use `""` or `"."` for vault root. Default: `"/"`. |
-| `recursive` | boolean | no | If true, walk entire subtree. Default: false. |
-| `show` | string | no | What to include: `"files"`, `"directories"`, or `"all"`. Default: `"all"`. |
-| `format` | string | no | Output format: `"table"` (markdown table, default) or `"detailed"` (key-value blocks). |
-| `extensions` | string[] | no | Filter by file extensions (e.g., `[".md", ".txt"]`). Case-insensitive. Ignored when `show` is `"directories"`. |
-| `after` | string | no | Include entries modified/created >= this date. Relative (`"7d"`, `"24h"`, `"1w"`) or ISO (`"2026-04-01"`). |
-| `before` | string | no | Include entries modified/created <= this date. Relative or ISO format. |
-| `date_field` | string | no | Which timestamp `after`/`before` filter against: `"updated"` (default) or `"created"`. |
-| `limit` | integer | no | Maximum entries to return. Default: 200. |
-
-**Returns:** File and directory metadata with title, tags, fqc_id, size, and timestamps for tracked files. Untracked files show filesystem metadata only. Response ends with a summary line.
-
-**Example — list a folder:**
-```
-mcp__flashquery__list_vault({
-  path: "clients/acme"
-})
-```
-
-**Example — recent markdown files across vault with full metadata:**
-```
-mcp__flashquery__list_vault({
-  path: "",
-  recursive: true,
-  extensions: [".md"],
-  after: "7d",
-  format: "detailed"
-})
-```
-
-**Example — directories only:**
-```
-mcp__flashquery__list_vault({
-  path: "projects",
-  show: "directories"
-})
-```
-
-**Usage notes:**
-- `path` is optional (default `"/"`). Use `""` or `"."` for the vault root.
-- `extensions` is an array, not a single string. Use `[".md"]` not `".md"`.
-- The old date range parameters are gone — use `after` and `before` instead.
-- When `show` is `"directories"`, `extensions` is silently ignored.
-- Default output is a markdown table. Use `format: "detailed"` when you need `fqc_id` or tags for follow-up tool calls.
-
----
-
-## Section and Metadata Editing
-
-These tools modify specific parts of a document without rewriting the whole thing. They preserve surrounding content and avoid unnecessary re-embedding.
-
-### append_to_doc
-
-Append markdown content to the end of a document. Use for adding new entries, log lines, or notes at the bottom of a file. For inserting content at a specific location, use `insert_in_doc` instead.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `content` | string | yes | Content to append (include any markdown structure such as headings) |
-
-**Returns:** Confirmation with document path.
-
-**Example:**
-```
-mcp__flashquery__append_to_doc({
-  identifier: "a1b2c3d4-...",
-  content: "\n## Follow-up Notes\n\nDiscussed timeline..."
-})
-```
-
----
-
-### insert_in_doc
-
-Insert markdown content at a specific position in a document: after a heading, before a heading, at the end of a section, at the top, or at the bottom. Use this for adding entries to a specific section (e.g., logging a new interaction under "## Interactions") or prepending content to a document.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `content` | string | yes | Markdown content to insert (not including the anchor heading itself) |
-| `position` | "top" or "bottom" or "after_heading" or "before_heading" or "end_of_section" | yes | Where to insert content |
-| `heading` | string | no | Anchor heading name. Required for `after_heading`, `before_heading`, and `end_of_section` positions. |
-| `occurrence` | number | no | Which occurrence of heading if multiple match the same name (1-indexed). Default: 1 |
-
-**Returns:** Confirmation message.
-
-**Example — insert after a heading:**
-```
-mcp__flashquery__insert_in_doc({
-  identifier: "a1b2c3d4-...",
-  content: "\n- 2026-04-21: Called about renewal\n",
-  position: "after_heading",
-  heading: "Interactions"
-})
-```
-
-**Example — prepend to top:**
-```
-mcp__flashquery__insert_in_doc({
-  identifier: "a1b2c3d4-...",
-  content: "> **Status:** Under review as of 2026-04-21\n",
-  position: "top"
-})
-```
-
-**Usage notes:**
-- The parameter is `heading`, not `anchor_heading`.
-- `position` is required — there is no default.
-- Supports five positions: `top`, `bottom`, `after_heading`, `before_heading`, `end_of_section`.
-
----
-
-### replace_doc_section
-
-Replace the content of a specific heading section in a document, leaving all other sections untouched. The heading line is preserved; only the section body is replaced. Use `include_subheadings` to control whether child sections are included in the replacement.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `heading` | string | yes | Heading text to match (case-sensitive) |
-| `content` | string | yes | New markdown content for section body (does not include the heading line) |
-| `include_subheadings` | boolean | no | When true (default), replace full section including nested headings. When false, preserve child headings. |
-| `occurrence` | number | no | Which occurrence if heading appears multiple times (1-indexed). Default: 1 |
-
-**Returns:** Confirmation message. Includes the old section content for undo purposes.
-
-**Example:**
-```
-mcp__flashquery__replace_doc_section({
-  identifier: "a1b2c3d4-...",
-  heading: "Pricing",
-  content: "\nRevised pricing: $5,000/month for the base tier.\n"
-})
-```
-
-**Usage notes:**
-- The parameter is `content`, not `new_content`.
-- Heading match is by text, not by heading level — "Configuration" matches `## Configuration` and `### Configuration`.
-
----
-
-### update_doc_header
-
-Update frontmatter fields on a document without touching the body content. Pass a map of field names to new values. Pass null as a value to remove a field. Syncs tags to the database automatically when the `tags` key is included.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Document path, fqc_id UUID, or filename |
-| `updates` | object | yes | Map of frontmatter fields to set. Use null to remove a field. |
-
-**Returns:** Confirmation message.
-
-**Example:**
-```
-mcp__flashquery__update_doc_header({
-  identifier: "a1b2c3d4-...",
-  updates: {
-    "client_stage": "active",
-    "legacy_field": null
-  }
-})
-```
-
----
-
-### apply_tags
-
-Add or remove tags on one or more vault documents or a memory in a single call. Supports batch operations — pass multiple identifiers to tag several documents at once. Adding a tag that already exists is a no-op; removing a tag that doesn't exist is a silent no-op.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifiers` | string or string[] | no | One or more document identifiers. Use this OR `memory_id`, not both. |
-| `memory_id` | string | no | UUID of the memory to tag. Use this OR `identifiers`, not both. |
-| `add_tags` | string[] | no | Tags to add (idempotent) |
-| `remove_tags` | string[] | no | Tags to remove (silent no-op if not present) |
-
-**Returns:** Updated tag list.
-
-**Example — tag a single document:**
-```
+#### `get_document`
+
+Read one or more documents by path, `fq_id`, or filename.
+
+Parameters:
+- `identifiers`: string or string array.
+- `include`: any of `["body", "frontmatter", "headings"]`; default `["body"]`.
+- `sections`: heading names to extract; requires `"body"` in `include`.
+- `include_nested`: section extraction option, default `true`.
+- `occurrence`: 1-indexed heading occurrence when `sections` has exactly one item.
+- `max_depth`: heading depth 1-6.
+- `follow_ref`: dot path into frontmatter whose string value resolves to another document.
+
+#### `archive_document`
+
+Archive one or more documents without deleting the file. Parameters: `identifiers` as string or string array.
+
+#### `remove_document`
+
+Archive then remove documents from their current path. If a trash folder is configured, files move there; otherwise they are deleted. Parameters: `identifiers` as string or string array. Use `archive_document` for reversible archive-only workflows.
+
+#### `copy_document`
+
+Copy one source document to a new path. Parameters: `identifier`, optional `destination`. The copy gets a new `fq_id`; source metadata is copied as-is.
+
+#### `move_document`
+
+Move or rename one document while preserving its `fq_id`. Parameters: `identifier`, `destination`. Existing links are not rewritten automatically.
+
+#### `insert_in_doc`
+
+Insert markdown at `top`, `bottom`, `after_heading`, `before_heading`, or `end_of_section`.
+
+Parameters: `identifier`, `position`, `content`, optional `heading`, `occurrence`, `include_nested`, `heading_match` (`"contains"` or `"exact"`), and `heading_level`.
+
+#### `replace_doc_section`
+
+Replace or delete a heading section. Parameters: `identifier`, `heading`, `content`, optional `include_nested`, `heading_match`, `heading_level`, `occurrence`. Passing `content: ""` deletes the heading and section.
+
+#### `apply_tags`
+
+Add or remove tags on ordered document and memory targets.
+
+Preferred parameters:
+```js
 mcp__flashquery__apply_tags({
-  identifiers: "a1b2c3d4-...",
-  add_tags: ["#status/active"],
+  targets: [{ entity_type: "document", identifier: "projects/acme/brief.md" }],
+  add_tags: ["#status/review"],
   remove_tags: ["#status/draft"]
 })
 ```
 
-**Example — batch tag multiple documents:**
-```
-mcp__flashquery__apply_tags({
-  identifiers: ["a1b2c3d4-...", "e5f6g7h8-..."],
-  add_tags: ["#project/alpha"]
-})
-```
+Compatibility parameters `identifiers` and `memory_id` are still accepted, but new skills should use `targets`.
 
-**Example — tag a memory:**
-```
-mcp__flashquery__apply_tags({
-  memory_id: "f9e8d7c6-...",
-  add_tags: ["preference"]
-})
-```
+#### `insert_doc_link`
 
-**Usage notes:**
-- The parameter is `identifiers` (plural), not `identifier`.
-- There is no `set_tags` parameter — use `add_tags` and `remove_tags` for incremental changes.
-- Can target documents OR a memory, but not both in the same call.
-- Only one `#status/*` tag allowed per document — remove the old one before adding a new one.
+Transitional helper that adds a wiki-style link to one or more source documents. Parameters: `identifiers`, `target_identifier`, optional `property`. This is transitional and may eventually be replaced by macro tooling.
 
----
+#### `list_vault`
 
-### insert_doc_link
+Browse vault files and directories.
 
-Add a wiki-style document link ([[Target Doc]]) to a document's frontmatter links array. Deduplicates automatically — adding the same link twice is a no-op. The display text is derived from the resolved target document's title.
+Parameters:
+- `path`: optional directory path, default `/`.
+- `show`: `"files"`, `"directories"`, or `"all"`.
+- `include`: optional `["metadata", "tracking"]`.
+- `recursive`: boolean.
+- `extensions`: string array such as `[".md"]`.
+- `after`, `before`: relative (`7d`, `24h`, `1w`) or ISO dates.
+- `date_field`: `"updated"` or `"created"`.
+- `limit`: positive integer, default 200.
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `identifier` | string | yes | Source document path, fqc_id UUID, or filename |
-| `target` | string | yes | Target document path, fqc_id UUID, or filename |
-| `property` | string | no | Frontmatter property to add the link to. Default: "links". Alternatives: "related", "parent", etc. |
+The response is structured JSON with `path`, counts, truncation flag, and `entries`.
 
-**Returns:** Confirmation message.
+### Search and Briefing
 
-**Example:**
-```
-mcp__flashquery__insert_doc_link({
-  identifier: "a1b2c3d4-...",
-  target: "clients/acme/contract.md",
-  property: "related"
-})
-```
+#### `search`
 
-**Usage notes:**
-- The parameters are `target` and `property`, not `target_identifier`, `link_text`, or `anchor_heading`.
-- Link text is derived automatically from the target document's title — you don't specify it.
+Unified document and memory search.
 
----
+Parameters:
+- `query`: optional. Empty query requires filters or `list_all: true`.
+- `mode`: `"filesystem"`, `"semantic"`, or `"mixed"`; default mixed.
+- `entity_types`: any of `["documents", "memories"]`.
+- `tags`, `tag_match`, `limit`, `path_filter`, `include_archived`, `list_all`.
 
-## Memory Management
+Use this instead of removed `search_documents`, `search_memory`, `list_memories`, and `search_all`.
 
-Memories are short persistent facts, preferences, or observations. They survive across sessions and are searchable by semantic similarity.
+#### `get_briefing`
 
-### save_memory
+Transitional tagged briefing helper. Parameters: `tags`, optional `tag_match`, `limit`, `entity_types` (`documents`, `memories`, `records`), and `plugin_id`.
 
-Store a persistent fact, preference, or observation that should be recalled in future conversations. Memories survive across sessions — use this for information the user wants remembered long-term, not for temporary notes. Tag memories for easy retrieval later.
+### Memory
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `content` | string | yes | The memory text to store |
-| `tags` | string[] | no | Tags for categorization |
-| `plugin_scope` | string | no | Plugin scope (e.g., "crm"). Auto-corrected via fuzzy match against registered plugins. Default: "global" |
+#### `write_memory`
 
-**Returns:** Memory ID (UUID), tags, and scope information.
+Create or update persistent memory.
 
-**Example:**
-```
-mcp__flashquery__save_memory({
-  content: "Sarah at Acme prefers email over phone calls",
-  tags: ["preference", "acme"],
+Create:
+```js
+mcp__flashquery__write_memory({
+  mode: "create",
+  content: "Acme prefers async status updates.",
+  tags: ["#client/acme"],
   plugin_scope: "crm"
 })
 ```
 
-**Usage notes:**
-- Keep memories concise and factual — they're retrieved by semantic search, so clear language improves recall.
-- Use `plugin_scope` to namespace memories to a specific plugin domain.
-
----
-
-### search_memory
-
-Search memories by semantic similarity, optionally filtered by tags. Returns ranked results with match scores. Use this when the user asks "do I have a memory about X" or "what did I note about Y." For listing all memories without a search query, use `list_memories` instead.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `query` | string | yes | Search query |
-| `tags` | string[] | no | Filter by tags |
-| `tag_match` | "any" or "all" | no | How to combine tag filters. Default: "any" |
-| `threshold` | number | no | Minimum similarity score (0-1). Default: 0.4 |
-| `limit` | number | no | Maximum results. Default: 10 |
-
-**Returns:** List of memories with ID, content, tags, match score, and creation date.
-
-**Example:**
-```
-mcp__flashquery__search_memory({
-  query: "communication preferences",
-  tags: ["acme"],
-  limit: 5
+Update:
+```js
+mcp__flashquery__write_memory({
+  mode: "update",
+  memory_id: "uuid",
+  content: "Acme now prefers weekly syncs.",
+  tags: ["#client/acme"]
 })
 ```
 
----
+`plugin_scope` is create-only. Updates create a new latest version; use the returned `memory_id` for future updates.
 
-### list_memories
+#### `get_memory`
 
-List memories filtered by tags, without requiring a search query. Returns all matching memories with truncated content previews and memory IDs. Use this when the user wants to browse or review memories by category — e.g., "show me my CRM memories" or "list everything tagged preference."
+Retrieve memories by ID. Parameters: `memory_ids` as string or string array, optional `include: ["content", "tags_full"]`.
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `tags` | string[] | no | Filter by tags |
-| `tag_match` | "any" or "all" | no | How to combine tag filters. Default: "any" |
-| `limit` | number | no | Maximum results. Default: 50 |
+#### `archive_memory`
 
-**Returns:** List of memories with IDs, truncated content previews, tags, and metadata.
+Archive memory version chains. Parameters: `memory_ids` as string or string array. Legacy `memory_id` is accepted during migration, but use `memory_ids`.
 
-**Example:**
-```
-mcp__flashquery__list_memories({
-  tags: ["preference"],
-  limit: 20
-})
-```
+### Plugin Records
 
----
+#### `register_plugin`
 
-### get_memory
+Register or update a plugin schema. Parameters: `schema_path` or `schema_yaml`, optional `plugin_instance`.
 
-Retrieve one or more memories by their memory ID. Returns full content and all metadata. Pass a single ID or an array of IDs for batch retrieval. Use this after finding memory IDs through `search_memory` or `list_memories` when you need the complete, untruncated content.
+Re-registering a higher schema version applies safe additive changes (new tables/columns) and rejects unsafe changes. Same-version re-registration is idempotent. Version downgrades update registry metadata without DDL migration.
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `memory_ids` | string or string[] | yes | Single memory ID (UUID) or array of memory IDs for batch retrieval |
+#### `get_plugin_info`
 
-**Returns:** Full memory content, tags, version history, and metadata.
+Inspect a registered plugin. Parameters: `plugin_id`, optional `plugin_instance`, optional `include: ["schema", "tables", "status_detail"]`.
 
-**Example — single memory:**
-```
-mcp__flashquery__get_memory({
-  memory_ids: "f9e8d7c6-..."
-})
-```
+#### `unregister_plugin`
 
-**Example — batch retrieval:**
-```
-mcp__flashquery__get_memory({
-  memory_ids: ["f9e8d7c6-...", "a1b2c3d4-..."]
-})
-```
+Remove plugin registry state. Parameters: `plugin_id`, optional `plugin_instance`, optional `force`. Without `force`, live records produce a conflict. With `force: true`, registry and pending review state are removed while existing plugin table rows are left orphaned. Vault files are not deleted.
 
-**Usage notes:**
-- The parameter is `memory_ids` (plural), not `memory_id`. It accepts a single string or an array.
+#### `write_record`
 
----
+Create or update one structured plugin record.
 
-### update_memory
+Parameters: `mode` (`"create"` or `"update"`), `plugin_id`, optional `plugin_instance`, `table`, optional `id` for update, `data`, optional `include: ["data", "schema_metadata"]`.
 
-Update an existing memory's content by ID. Creates a new version — the previous version is preserved for history. Use `search_memory` or `list_memories` to find the memory_id first.
+#### `get_record`
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `memory_id` | string (UUID) | yes | UUID of the memory to update |
-| `content` | string | yes | New content to replace the existing memory text |
-| `tags` | string[] | no | New tags. If omitted, existing tags are preserved. |
+Retrieve one structured plugin record. Parameters: `plugin_id`, optional `plugin_instance`, `table`, `id`, optional `include`.
 
-**Returns:** New version ID, previous version ID, and version number.
+#### `archive_record`
 
-**Example:**
-```
-mcp__flashquery__update_memory({
-  memory_id: "f9e8d7c6-...",
-  content: "Sarah at Acme now prefers Slack over email",
-  tags: ["preference", "acme"]
-})
-```
-
----
-
-### archive_memory
-
-Archive a memory by marking it inactive. Archived memories no longer appear in `search_memory` or `list_memories` results. Use this when a memory is outdated, wrong, or the user asks to forget something.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `memory_id` | string (UUID) | yes | UUID of the memory to archive |
-
-**Returns:** Confirmation message.
-
-**Example:**
-```
-mcp__flashquery__archive_memory({
-  memory_id: "f9e8d7c6-..."
-})
-```
-
----
-
-## Record Management
-
-Records are structured data rows in plugin-registered tables. Use these when you need custom fields beyond what documents and memories provide (e.g., CRM contacts, task trackers, inventory items).
-
-Records require a registered plugin with a defined schema. See [Plugin Management](#plugin-management).
-
-### create_record
-
-Create a new record in a plugin table — e.g., a CRM contact, a task, a log entry. The table must have been created by `register_plugin` first.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier. Omit for single-instance plugins. |
-| `table` | string | yes | Table name as defined in plugin schema |
-| `fields` | object | yes | Field values as key-value pairs |
-
-**Returns:** New record's ID (UUID).
-
-**Example:**
-```
-mcp__flashquery__create_record({
-  plugin_id: "crm",
-  table: "contacts",
-  fields: {
-    name: "Sarah Chen",
-    company: "Acme Corp",
-    role: "VP Engineering",
-    email: "sarah@acme.com"
-  }
-})
-```
-
----
-
-### get_record
-
-Retrieve a single record by its ID from a plugin table. Returns all fields for that record.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-| `table` | string | yes | Table name as defined in plugin schema |
-| `id` | string (UUID) | yes | Record UUID |
-
-**Returns:** Full record as JSON with all fields.
-
-**Example:**
-```
-mcp__flashquery__get_record({
-  plugin_id: "crm",
-  table: "contacts",
-  id: "a1b2c3d4-..."
-})
-```
-
----
-
-### update_record
-
-Update specific fields on an existing record in a plugin table. Pass only the fields that need to change — other fields are preserved.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-| `table` | string | yes | Table name as defined in plugin schema |
-| `id` | string (UUID) | yes | Record UUID |
-| `fields` | object | yes | Fields to update (key-value pairs) |
-
-**Returns:** Confirmation of update.
-
-**Example:**
-```
-mcp__flashquery__update_record({
-  plugin_id: "crm",
-  table: "contacts",
-  id: "a1b2c3d4-...",
-  fields: {
-    role: "CTO",
-    notes: "Promoted in Q1 2026"
-  }
-})
-```
-
----
-
-### archive_record
-
-Soft-delete a record by setting its status to "archived." The record remains in the database but is excluded from search results. Use this when a record is no longer active but should be preserved for history.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-| `table` | string | yes | Table name as defined in plugin schema |
-| `id` | string (UUID) | yes | Record UUID |
-
-**Returns:** Confirmation message.
-
-**Example:**
-```
+Archive structured records. Parameters:
+```js
 mcp__flashquery__archive_record({
-  plugin_id: "crm",
-  table: "opportunities",
-  id: "a1b2c3d4-..."
+  targets: [{ plugin_id: "crm", table: "contacts", id: "uuid" }]
 })
 ```
 
----
+#### `search_records`
 
-### search_records
+Search plugin records by filters, text query, semantic data, or taggable tables.
 
-Search records in a plugin table by field filters, text query, or semantic similarity. Automatically uses vector search (pgvector) for tables with embedding fields, or text matching (ILIKE) otherwise.
+Parameters: optional `plugin_id`, optional `plugin_instance`, optional `table`, optional `filters`, optional `query`, optional `tag`, optional `taggable_tables_only`, optional `include`, optional `limit`.
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-| `table` | string | yes | Table name as defined in plugin schema |
-| `query` | string | no | Text search query (semantic if table has embed_fields, ILIKE otherwise) |
-| `filters` | object | no | Key-value field equality filters (AND logic) |
-| `limit` | number | no | Maximum results. Default: 10 |
+When `taggable_tables_only` is not true, `plugin_id` and `table` are required.
 
-**Returns:** List of records with match scores.
+#### `clear_pending_reviews`
 
-**Example — text search:**
-```
-mcp__flashquery__search_records({
-  plugin_id: "crm",
-  table: "contacts",
-  query: "engineering"
-})
-```
+List or clear pending plugin review rows. Parameters: `action` (`"list"` or `"clear"`), optional `plugin_id`, optional `ids` (pending review row IDs returned by `action: "list"`).
 
-**Example — field filter:**
-```
-mcp__flashquery__search_records({
-  plugin_id: "crm",
-  table: "opportunities",
-  filters: { stage: "proposal" },
-  limit: 20
-})
-```
+### Vault Maintenance
 
-**Example — combined:**
-```
-mcp__flashquery__search_records({
-  plugin_id: "crm",
-  table: "contacts",
-  query: "renewal",
-  filters: { relationship_type: "client" }
-})
-```
+#### `maintain_vault`
 
-**Usage notes:**
-- The parameter is `filters` (key-value object with AND logic), not `tags`, `tag_match`, or `status`.
-- `query` is optional — you can search by `filters` alone.
+Run administrative maintenance. Parameters:
+- `action`: `"sync"`, `"repair"`, `"status"`, or an array containing `"sync"`/`"repair"`.
+- `dry_run`: only valid for `action: "repair"`.
+- `background`: only valid for `action: "sync"`.
+- `job_id`: required for `action: "status"`.
 
----
+Use this instead of removed `force_file_scan` and `reconcile_documents`.
 
-## Plugin Management
+#### `manage_directory`
 
-Plugins define custom table schemas for structured data. Register a plugin to create tables, then use Record tools to manage data.
+Create or remove vault directories. Parameters: `action` (`"create"` or `"remove"`), `paths` (array of vault-relative directory paths). Create is recursive and idempotent. Remove is empty-only and returns per-path conflicts for non-empty directories.
 
-### register_plugin
+### LLM
 
-Register or update a plugin from a YAML schema definition. Creates plugin tables in the database on first registration. On re-registration with a new schema version, automatically applies safe additive changes (new tables, new columns) and rejects unsafe changes (removed tables, type changes) with specific guidance.
+#### `call_model`
 
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `schema_path` | string | no | Path to YAML schema file on disk. Provide this OR `schema_yaml`, not both. |
-| `schema_yaml` | string | no | Inline YAML schema string. Provide this OR `schema_path`, not both. |
-| `plugin_instance` | string | no | Plugin instance identifier. Omit for single-instance plugins. |
+Call configured models or purposes, or perform discovery.
 
-**Returns:** Registration confirmation with created/migrated tables.
+Parameters:
+- `resolver`: `"model"`, `"purpose"`, `"list_models"`, `"list_purposes"`, `"search"`, or `"help"`.
+- `name`: model alias or purpose name for model/purpose resolvers.
+- `messages`: OpenAI-style messages for model/purpose resolvers.
+- `parameters`, `template_params`, `return_messages`, `trace_id`.
 
-**Example YAML schema (tables and columns are arrays, not maps):**
-```yaml
-id: my-plugin
-name: My Plugin
-version: "1.0"
+Caller-provided provider tools are deferred; do not pass `tools` in `parameters`.
 
-tables:
-  - name: entries
-    description: Main data entries
-    embed_fields:
-      - name
-      - category
-    columns:
-      - name: name
-        type: text
-        required: true
-        description: Entry name
-      - name: category
-        type: text
-        description: Entry category
-      - name: priority
-        type: integer
-        description: Priority level (1-5)
-```
+#### `get_llm_usage`
 
-**Schema format rules:**
-- `tables` is an **array** of objects (`- name: ...`), not a map. Map-style (`tables: { entries: { ... } }`) is not supported.
-- `columns` is an **array** of objects (`- name: ...`), not a map.
-- Column `type` must be one of: `text`, `integer`, `boolean`, `uuid`, `timestamptz`.
-- Use `embed_fields` (array of column names) at the table level to enable semantic search. There is no separate `search:` block.
-- When `embed_fields` is present, the system automatically adds `embedding` and `embedding_updated_at` columns — don't define them manually.
-- Plugin metadata (`id`, `name`, `version`) can be at root level (shown above) or nested under `plugin:`.
+Query LLM usage. Parameters: `mode` (`"summary"`, `"by_purpose"`, `"by_model"`, `"recent"`), optional `period` (`"24h"`, `"7d"`, `"30d"`, `"all"`), optional `from_date`, `to_date`, `purpose_name`, `model_name`, `trace_id`, and `limit` for recent mode.
 
-**Example — register from inline YAML:**
-```
-mcp__flashquery__register_plugin({
-  schema_yaml: "id: my-plugin\nname: My Plugin\nversion: \"1.0\"\ntables:\n  - name: entries\n    columns:\n      - name: title\n        type: text\n        required: true\n"
-})
-```
+## Removed Tool Replacements
 
----
-
-### get_plugin_info
-
-Get the schema definition, table status, version, and registration details for an installed plugin. Use this to check if a plugin is registered, inspect its table structure, or verify its current schema version.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-
-**Returns:** Plugin name, version, instance, table prefix, and detailed table/column structure.
-
-**Example:**
-```
-mcp__flashquery__get_plugin_info({
-  plugin_id: "crm"
-})
-```
-
----
-
-### unregister_plugin
-
-Unregister a plugin and tear down its database resources. Call without `confirm_destroy` (or with it set to false) for a dry-run preview showing what will be removed. Call with `confirm_destroy: true` to execute the teardown. Teardown drops plugin tables, clears document ownership claims, deletes plugin-scoped memories, and removes the registry entry. Vault files are never deleted.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier |
-| `plugin_instance` | string | no | Plugin instance identifier |
-| `confirm_destroy` | boolean | no | Must be true to execute teardown. Omit or false for dry-run preview only. |
-
-**Returns:** Inventory of what will be removed (dry-run) or executed teardown summary.
-
-**Example — dry run:**
-```
-mcp__flashquery__unregister_plugin({
-  plugin_id: "my-plugin"
-})
-```
-
-**Example — confirmed teardown:**
-```
-mcp__flashquery__unregister_plugin({
-  plugin_id: "my-plugin",
-  confirm_destroy: true
-})
-```
-
-**Usage notes:**
-- Always do a dry-run first to show the user what will be removed.
-
----
-
-## Cross-Resource Tools
-
-### search_all
-
-Search across both documents and memories in a single semantic query. Returns unified, ranked results from both types. Use this when the user's search could match either documents or memories — e.g., "what do I know about Acme" or "find anything related to the Q2 launch." Falls back to filesystem search for documents when semantic search is unavailable.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `query` | string | yes | Search query |
-| `tags` | string[] | no | Filter results to items with these tags |
-| `tag_match` | "any" or "all" | no | How to combine tags. Default: "any" |
-| `limit` | number | no | Maximum results per entity type. Default: 10 |
-| `entity_types` | string[] | no | Which types to search: ["documents"], ["memories"], or both (default). |
-
-**Returns:** Ranked results from both documents and memories with match scores and source type.
-
-**Example — search everything:**
-```
-mcp__flashquery__search_all({
-  query: "Acme Corp renewal timeline",
-  limit: 10
-})
-```
-
-**Example — memories only with tag filter:**
-```
-mcp__flashquery__search_all({
-  query: "communication preferences",
-  tags: ["crm"],
-  entity_types: ["memories"]
-})
-```
-
-**Usage notes:**
-- The parameter is `tags` (single array), not separate `doc_tags` and `mem_tags`.
-- `limit` is per entity type, not total. So `limit: 10` returns up to 10 documents and 10 memories.
-- Use `entity_types` to restrict to just documents or just memories if needed.
-
----
-
-### get_briefing
-
-Get a summary of documents and memories matching specified tags. Returns document metadata (title, path, tags, fqc_id) and memory content, grouped by type. Optionally includes plugin record counts when `plugin_id` is provided.
-
-Use this when the user wants an overview of everything related to a topic — e.g., "brief me on the CRM" or "what do we have tagged project-alpha."
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `tags` | string[] | yes | Tags to filter by. Documents and memories with any/all of these tags are included. |
-| `tag_match` | "any" or "all" | no | Tag matching mode. Default: "any" |
-| `limit` | number | no | Maximum results per section. Default: 20 |
-| `plugin_id` | string | no | Include records from this plugin. Omit to exclude plugin records. |
-
-**Returns:** Grouped results: document metadata, memory content, and optionally plugin record counts.
-
-**Example:**
-```
-mcp__flashquery__get_briefing({
-  tags: ["acme"],
-  tag_match: "any",
-  plugin_id: "crm"
-})
-```
-
-**Usage notes:**
-- This is NOT per-document briefing — it's a tag-scoped overview across all documents, memories, and optionally records.
-- `tags` is required. For full-text search across everything, use `search_all` instead.
-
----
-
-### Structure Inspection
-
-`get_doc_outline` has been removed. Use `get_document` with `include: ["frontmatter", "headings"]` and optional `max_depth` to inspect document structure without body content.
-
-**Example — batch triage:**
-```
-mcp__flashquery__get_document({
-  identifiers: ["a1b2c3d4-...", "e5f6g7h8-..."],
-  include: ["frontmatter", "headings"],
-  max_depth: 2
-})
-```
-
-**Usage notes:**
-- There is no exact replacement for `get_doc_outline`'s old outline-only link graph. If a skill needs wikilinks, read targeted relationship sections with `get_document({ include: ["body"], sections: [...] })` and parse the wikilinks from those sections.
-- Use structure inspection before `get_document` with `sections` to discover what headings exist.
-
----
-
-## Vault Maintenance
-
-### force_file_scan
-
-Trigger an immediate vault scan to discover new files, detect moves, and track deletions. Updates the database index with current vault state. Use this before semantic search if you suspect files have been added or changed outside the AI chat, or after bulk file operations.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `background` | boolean | no | If true, scan runs in background and returns immediately. Default: false (synchronous, waits for results). |
-
-**Returns:** Counts: new_files, updated_files, moved_files, deleted_files, status_mismatches.
-
-**Example:**
-```
-mcp__flashquery__force_file_scan({})
-```
-
----
-
-### reconcile_documents
-
-Scan the database for documents whose vault file is missing. Detects files that were moved (by matching fqc_id in frontmatter at the new location) and updates their path. Files that are permanently gone are marked archived. Use this after bulk file moves, vault reorganization, or when documents show stale path warnings.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `dry_run` | boolean | no | If true, report what would change without making any database updates. Default: false |
-
-**Returns:** Summary of reconciliation actions: new, moved, missing, merged.
-
-**Example — preview changes:**
-```
-mcp__flashquery__reconcile_documents({
-  dry_run: true
-})
-```
-
-**Example — apply fixes:**
-```
-mcp__flashquery__reconcile_documents({})
-```
-
----
-
-### create_directory
-
-Create one or more directories in the vault. Creates intermediate directories automatically (mkdir -p semantics). Idempotent: calling on an existing directory succeeds and is noted in the response, not treated as an error. Use this when a skill needs to set up an organizational folder structure before saving documents.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `paths` | string or string[] | yes | One or more vault-relative directory paths to create. Accepts a single string or an array of strings. |
-| `root_path` | string | no | Vault-relative base prefix applied to all entries in `paths`. Default: `"/"` (vault root). |
-
-**Returns:** Confirmation with created paths; pre-existing directories are noted (not errored).
-
-**Example — single path:**
-```
-mcp__flashquery__create_directory({
-  paths: "clients/acme/2026"
-})
-```
-
-**Example — batch with root_path:**
-```
-mcp__flashquery__create_directory({
-  paths: ["contacts", "companies", "interactions"],
-  root_path: "CRM"
-})
-```
-
-**Usage notes:**
-- `paths` is the parameter name for `create_directory` — never `path` (singular). It accepts a single string or an array.
-- Idempotent: already-existing directories are reported in the response as "already exists," not errored.
-- Illegal filesystem characters in directory name segments are sanitized (replaced with spaces) and reported.
-- Absolute paths starting with `/` are rejected — all paths must be vault-relative.
-- No write lock — pure filesystem operation. No confirmation needed before executing.
-
----
-
-### remove_directory
-
-Safely remove an empty directory from the vault. Returns an error listing contents if the directory is not empty — no recursive deletion, no force parameter. Use when cleaning up temporary or staging folders after moving or archiving their contents.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `path` | string | yes | Vault-relative path of the directory to remove |
-
-**Returns:** Confirmation that the directory was removed.
-
-**Example:**
-```
-mcp__flashquery__remove_directory({
-  path: "temp/staging"
-})
-```
-
-**Usage notes:**
-- Only works on empty directories. If the directory has contents, the error response lists everything inside it so you know what to move or remove first.
-- Cannot remove the vault root directory.
-- Use `move_document` or `archive_document` to clear out files before removing the directory.
-
----
-
-### clear_pending_reviews
-
-Query or clear pending review items from the `fqc_pending_plugin_review` table for a plugin. This is the primary mechanism for **pull-based document processing** — instead of push callbacks, FlashQuery populates a work queue when it auto-tracks new files or resurrects archived ones, and skills (typically run on a schedule via `/loop` or cron) query the queue, process the items, and clear them.
-
-Call with empty `fqc_ids` to **query** what's pending without deleting anything. Call with `fqc_ids` populated to **clear** those items and return what remains. The response shape is always the same: the current pending list for the plugin after any clearing.
-
-This tool replaces the old `on_document_discovered` push callback pattern. Skills are now triggered on a schedule and pull from this queue rather than being invoked reactively per-file.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `plugin_id` | string | yes | Plugin identifier. Always required — queries are scoped to one plugin. |
-| `plugin_instance` | string | no | Plugin instance identifier. Default: "default" |
-| `fqc_ids` | string[] | no | Document IDs to clear. Empty array or omitted = query mode (list pending items without deleting). Non-empty = clear matching rows, then return what remains. |
-
-**Returns:** The current list of pending review items for the plugin (after clearing, if any). Each item includes:
-- `fqc_id` — the document's UUID (use with `get_document` to read content)
-- `table_name` — which plugin table the auto-tracked row lives in (e.g., `'contacts'`)
-- `review_type` — why this item was queued: `'template_available'`, `'new_document'`, `'resurrected'`, or `'custom'`
-- `context` — JSONB metadata for the skill to act on (e.g., `{ "template": "contact_note.md", "type_id": "crm-contacts" }`)
-
-**When items are queued (automatically by FlashQuery during reconciliation):**
-- `on_added: auto-track` fires and the `documents.types` entry declares a `template` → `review_type: 'template_available'`
-- `on_added: auto-track` fires with no template but the plugin opts into new-document review → `review_type: 'new_document'`
-- An archived plugin row is resurrected (document reappeared in vault) → `review_type: 'resurrected'`
-
-Pending items are also surfaced **passively** in every record tool response — so an in-conversation skill can see them too. But `clear_pending_reviews` is the dedicated entry point for scheduled skills that don't need to make a real record tool call just to check for work.
-
-**Expected calling pattern for a scheduled skill:**
-
-```
-Step 1 — Query what's pending:
-clear_pending_reviews({ plugin_id: "crm", fqc_ids: [] })
-→ returns list of items with fqc_id, table_name, review_type, context
-
-Step 2 — Process each item:
-  - get_document({ identifiers: item.fqc_id }) to read content
-  - Apply template, classify, enrich, route, or take "no action needed"
-  - Use move_document, update_document, apply_tags, etc. as needed
-
-Step 3 — Clear what was processed:
-clear_pending_reviews({ plugin_id: "crm", fqc_ids: [processed_id_1, processed_id_2, ...] })
-→ returns remaining pending items (if any)
-
-Step 4 — If items remain, the next scheduled invocation picks them up (incremental batching)
-```
-
-"No action needed" is a valid reason to clear — if a document doesn't need processing, clear it anyway so it doesn't pile up.
-
-**Example — query what's pending for a plugin:**
-```
-mcp__flashquery__clear_pending_reviews({
-  plugin_id: "crm"
-})
-```
-
-**Example — clear processed items and confirm what remains:**
-```
-mcp__flashquery__clear_pending_reviews({
-  plugin_id: "crm",
-  fqc_ids: ["a1b2c3d4-...", "e5f6g7h8-..."]
-})
-```
-
-**Usage notes:**
-- Clearing an `fqc_id` that doesn't exist in the queue is a silent no-op — safe to pass all processed IDs.
-- The response shape is always the current pending list, regardless of whether you're querying or clearing.
-- Clearing with the full list of IDs you processed and getting back an empty list confirms all work is done.
-
----
-
-## LLM Tools
-
-These tools require an `llm:` section in `flashquery.yml` (for `call_model`) and a Supabase connection (for `get_llm_usage`). Both tools are always registered — they return informative errors when their prerequisites are absent. Do not use these tools in skills unless the skill's README or documentation explicitly states that LLM access is available.
-
-The `llm:` config uses a three-layer model: **providers** (named API endpoints), **models** (named aliases mapping to a provider + underlying model string + cost), and **purposes** (named calling policies with an ordered fallback chain). Skills reference models and purposes by their alias names, never by the underlying API model string.
-
-### call_model
-
-Call any configured LLM model and receive its text response plus a diagnostic envelope with token usage, computed cost, and latency. Used when a skill needs to generate content, classify text, transform data, or run any AI step internally — without the user making the call themselves.
-
-Two resolvers are available:
-- **`resolver: "model"`** — calls one specific model alias directly. Use when determinism matters (testing, benchmarking).
-- **`resolver: "purpose"`** — walks a named purpose's fallback chain in order. Use for production workflows — survives provider outages automatically.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `resolver` | "model" or "purpose" | yes | Which calling mode to use. |
-| `name` | string | yes | Model alias name (resolver=model) or purpose name (resolver=purpose). Both are lowercased before lookup. |
-| `messages` | array | yes | OpenAI-style messages array, minimum one item. Each item: `{ role: "system" \| "user" \| "assistant" \| "tool", content: string }`. |
-| `parameters` | object | no | Optional LLM parameters (temperature, max_tokens, top_p, etc.) passed to the provider. When using resolver=purpose, these merge with the purpose's defaults — caller wins. |
-| `template_params` | object | no | Parameters keyed by template path or alias for host-authored `{{ref:...}}` hydration. |
-| `return_messages` | boolean | no | When true, response includes post-hydration input messages plus the assistant message. Useful for debugging references. |
-| `trace_id` | string | no | Correlation ID for grouping related calls. When provided, the response includes cumulative cost and token totals across all calls with the same ID. |
-
-**Returns:** A JSON object with:
-- `response` — the model's text output (string)
-- `metadata` — diagnostic envelope containing:
-  - `resolver`, `name` — echo the inputs
-  - `resolved_model_name` — the model **alias** that ran (e.g. `"fast"`), not the underlying API model string
-  - `provider_name` — which provider was used
-  - `fallback_position` — null when resolver=model; 1-indexed position in the fallback chain when resolver=purpose (1 = primary model succeeded, 2 = first fallback ran, etc.)
-  - `tokens: { input, output }` — token counts
-  - `cost_usd` — computed cost from config pricing
-  - `latency_ms` — round-trip time
-  - `trace_id`, `trace_cumulative` — present only when trace_id was provided; cumulative sums across all calls sharing that trace_id
-  - `injected_references`, `prompt_chars` — present only when host-authored `{{ref:...}}` references were hydrated
-
-**Example — generate content via purpose:**
-```
-mcp__flashquery__call_model({
-  resolver: "purpose",
-  name: "general",
-  messages: [
-    { role: "system", content: "You are a concise writing assistant." },
-    { role: "user", content: "Summarize this intake document in 2 sentences: ..." }
-  ]
-})
-```
-
-**Example — trace a multi-step skill run's cumulative cost:**
-```
-mcp__flashquery__call_model({
-  resolver: "purpose",
-  name: "drafting",
-  messages: [{ role: "user", content: "Write a follow-up proposal for Acme Corp." }],
-  parameters: { temperature: 0.4 },
-  trace_id: "crm-enrich-20260430"
-})
-```
-
-**Reference hydration:**
-
-Skills can pass vault content to the delegated model without first loading it into the host agent's context by placing `{{ref:...}}` placeholders in host-authored `system` or `user` messages. FlashQuery hydrates references before provider dispatch. If any reference fails, the tool returns `isError: true` with `error: "reference_resolution_failed"` and `failed_references`; no provider call is made.
-
-Supported active reference forms:
-- `{{ref:path/to/doc.md}}` — inject a document body by vault path.
-- `{{ref:<fqc_id>}}` — inject a document body by stable UUID.
-- `{{ref:doc.md#Heading}}` — inject one heading section.
-- `{{ref:doc.md->frontmatter.path}}` — follow a frontmatter pointer and inject the target document.
-- `{{ref:@alias}}` — fill the slot from `template_params`.
-- `\{{ref:doc.md}}` — pass literal reference syntax through to the model.
-
-Do not use `{{id:...}}`; current reference hydration uses `{{ref:...}}` for paths, filenames, and UUIDs.
-
-Template documents use `fq_template: true` frontmatter and `fq_params` declarations. For a direct template reference, key `template_params` by the same identifier used in the placeholder:
-
-```
-mcp__flashquery__call_model({
-  resolver: "purpose",
-  name: "general",
-  messages: [{ role: "user", content: "Run this review:\n\n{{ref:templates/review.md}}" }],
-  template_params: {
-    "templates/review.md": {
-      target_doc: "clients/acme/proposal.md",
-      criteria: "clarity and commercial risk"
-    }
-  }
-})
-```
-
-Use aliases when one template appears multiple times:
-
-```
-mcp__flashquery__call_model({
-  resolver: "purpose",
-  name: "general",
-  messages: [{ role: "user", content: "Compare:\n\nA:\n{{ref:@review_a}}\n\nB:\n{{ref:@review_b}}" }],
-  template_params: {
-    review_a: {
-      _template: "templates/review.md",
-      target_doc: "clients/acme/proposal.md",
-      criteria: "commercial risk"
-    },
-    review_b: {
-      _template: "templates/review.md",
-      target_doc: "clients/acme/contract.md",
-      criteria: "legal risk"
-    }
-  }
-})
-```
-
-Use `_items` to inject an ordered bundle at one alias slot:
-
-```
-template_params: {
-  background: {
-    _items: [
-      "clients/acme/discovery.md",
-      "clients/acme/proposal.md#Scope",
-      "clients/acme/latest.md->versions.approved",
-      { _template: "templates/context-note.md", target_doc: "clients/acme/notes.md", focus: "open decisions" }
-    ],
-    _separator: "\n\n---\n\n"
-  }
-}
-```
-
-`#` and `->` are mutually exclusive. Alias placeholders cannot use either operator. References and template substitutions are single-pass: injected content is not scanned recursively.
-
-**Template tools for delegated models:**
-
-When a skill needs the delegated model to decide which template to call during its own tool loop, define templates with `fq_template: true`, `fq_namespace`, `fq_desc`, `fq_params`, and `fq_expose_as_tool: true`, then bind them to a purpose. Prefer this for agentic workflows where the model must choose context or operations dynamically. Prefer host-authored `{{ref:...}}` when the host already knows what context to provide.
-
-**Error responses:**
-| Condition | isError | Response text |
-|-----------|---------|--------------|
-| `llm:` absent | true | `"LLM is not configured. Add an llm: section to flashquery.yml to use this tool."` |
-| Unknown model alias | true | `"Model 'X' not found. Available models: ..."` |
-| Unknown purpose name | true | `"Purpose 'X' not found. Available purposes: ..."` |
-| Chain exhausted | true | Multi-line: `"call_model failed: purpose 'X' — all N models exhausted\n  [1] model (provider): error\n  [2] ..."` |
-
-**Usage notes:**
-- `resolved_model_name` in the response is the alias (e.g. `"fast"`), not the underlying model string (e.g. `"gpt-4o-mini"`).
-- Prompt safety is the caller's responsibility — messages are forwarded as-is.
-- Do not call `call_model` with embedding-type model aliases — those are for FlashQuery's internal search.
-- When resolver=purpose, `parameters` overrides the purpose's `defaults:` for that call only.
-- Use `get_document` before `call_model` when the host agent must inspect, validate, quote, or edit the source content. Use `{{ref:...}}` when the content is only context for the delegated model.
-
----
-
-### get_llm_usage
-
-Query aggregated LLM usage and cost statistics from the `fqc_llm_usage` table. Every `call_model` call is automatically recorded there. Use this when a skill needs to report on accumulated spend, surface usage breakdowns, or audit the calls from a specific skill run.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| `mode` | "summary" or "by_purpose" or "by_model" or "recent" | yes | Aggregation mode — see below. |
-| `period` | "24h" or "7d" or "30d" or "all" | no | Date range shortcut relative to now. Default: "7d". Overridden by from_date/to_date. |
-| `from_date` | string | no | ISO 8601 lower bound (inclusive). E.g. "2026-04-01". |
-| `to_date` | string | no | ISO 8601 upper bound, end-of-day inclusive for date-only values. Requires from_date. |
-| `purpose_name` | string | no | Filter to a single purpose name. Use "_direct" to filter to resolver=model calls. |
-| `model_name` | string | no | Filter to a single model alias. |
-| `trace_id` | string | no | Filter to a single trace ID — most useful with mode: "recent" to audit one skill run. |
-| `limit` | integer | no | recent mode only. Default: 20, max: 1000. |
-
-**Date range precedence:** from_date+to_date (explicit) → from_date only → period → default 7d. `to_date` without `from_date` is an error. `period: "all"` removes all date filters.
-
-**Returns by mode:**
-
-`summary` — totals + period comparison:
-```json
-{
-  "mode": "summary",
-  "period": { "from": "2026-04-23T...", "to": "2026-04-30T..." },
-  "total_calls": 42,
-  "total_spend_usd": 0.187,
-  "avg_cost_per_call_usd": 0.00445,
-  "avg_latency_ms": 712,
-  "top_purpose": "general",
-  "top_model_name": "fast",
-  "vs_prior_period": { "calls_delta_pct": 15.3, "spend_delta_pct": 8.1 }
-}
-```
-`vs_prior_period` is absent when `period: "all"`. Delta fields are `null` when prior period had zero calls.
-
-`by_purpose` — per-purpose breakdown:
-```json
-{
-  "purposes": [
-    { "purpose_name": "general", "calls": 28, "spend_usd": 0.124, "avg_cost_per_call_usd": 0.00443, "avg_latency_ms": 690, "primary_model_hit_rate": 0.93 }
-  ],
-  "direct_model_calls": { "calls": 7, "spend_usd": 0.02, "avg_cost_per_call_usd": 0.00286, "avg_latency_ms": 410 }
-}
-```
-`primary_model_hit_rate` — fraction [0,1] of calls that used the first model in the chain. `direct_model_calls` — calls made with resolver=model.
-
-`by_model` — per-model breakdown:
-```json
-{
-  "models": [
-    { "model_name": "fast", "provider_name": "openai", "calls": 35, "pct_of_total_calls": 0.833, "avg_fallback_position": 1.03, "spend_usd": 0.144, "avg_cost_per_call_usd": 0.00411, "avg_latency_ms": 620 }
-  ]
-}
-```
-`pct_of_total_calls` — fraction [0,1] of total calls. `avg_fallback_position` — null when all calls to this model were direct (no chain).
-
-`recent` — individual records newest-first:
-```json
-{
-  "entries": [
-    { "timestamp": "2026-04-30T14:23:11Z", "purpose_name": "drafting", "model_name": "smart", "provider_name": "openai", "tokens": { "input": 820, "output": 415 }, "cost_usd": 0.0062, "latency_ms": 1840, "fallback_position": 1, "trace_id": "crm-enrich-20260430" }
-  ]
-}
-```
-Direct model calls appear with `purpose_name: "_direct"` and `fallback_position: null`.
-
-**Examples:**
-
-This week's cost summary:
-```
-mcp__flashquery__get_llm_usage({ mode: "summary" })
-```
-
-Audit calls from one skill trace:
-```
-mcp__flashquery__get_llm_usage({
-  mode: "recent",
-  trace_id: "crm-enrich-20260430"
-})
-```
-
-Per-purpose breakdown this month:
-```
-mcp__flashquery__get_llm_usage({
-  mode: "by_purpose",
-  period: "30d"
-})
-```
-
-**Usage notes:**
-- `pct_of_total_calls` and `primary_model_hit_rate` are fractions [0,1] — multiply by 100 for percentages.
-- `model_name` in all responses is the alias, not the underlying API model string.
-- Zero rows returns empty arrays and zeros — not `isError`. `isError` fires only on Supabase errors.
-- `to_date` requires `from_date`; `limit` applies only to `recent` mode.
+| Removed tool | Use instead |
+|--------------|-------------|
+| `create_document`, `update_document`, `update_doc_header` | `write_document` |
+| `append_to_doc` | `insert_in_doc` |
+| `search_documents`, `search_memory`, `list_memories`, `search_all` | `search` |
+| `save_memory`, `update_memory` | `write_memory` |
+| `create_record`, `update_record` | `write_record` |
+| `force_file_scan`, `reconcile_documents` | `maintain_vault` |
+| `create_directory`, `remove_directory` | `manage_directory` |

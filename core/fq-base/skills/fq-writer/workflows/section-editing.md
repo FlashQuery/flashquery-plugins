@@ -2,7 +2,7 @@
 
 Use this workflow when the user wants a **precise, section-scoped edit** to an existing document — adding an entry under a specific heading, rewriting a particular section, prepending a note to the top, or inserting content between two existing sections — without touching the rest of the body.
 
-This workflow covers the middle ground between `append_to_doc` (dumb append to the end) and `update_document` (full-body rewrite). Prefer these section-scoped tools whenever the edit has a clear anchor in the existing document — they preserve surrounding content, survive formatting that `update_document` would clobber, and avoid unnecessary re-embedding of text the user didn't want changed.
+This workflow covers the middle ground between `insert_in_doc` (dumb append to the end) and `write_document` (full-body rewrite). Prefer these section-scoped tools whenever the edit has a clear anchor in the existing document — they preserve surrounding content, survive formatting that `write_document` would clobber, and avoid unnecessary re-embedding of text the user didn't want changed.
 
 ## When to use
 
@@ -24,10 +24,10 @@ Does the user want to add content at a specific position
 
 Does the user just want content tacked on at the very end
 with no section awareness?
-  └── Yes → append_to_doc (see document-modification.md)
+  └── Yes → insert_in_doc (see document-modification.md)
 
 Does the user want to rewrite the whole body?
-  └── Yes → update_document (see document-modification.md)
+  └── Yes → write_document (see document-modification.md)
 ```
 
 ## Recommended pre-check

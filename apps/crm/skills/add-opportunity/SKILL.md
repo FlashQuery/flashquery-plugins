@@ -81,10 +81,11 @@ If no close date was mentioned, leave it null.
 
 ### 4. Create the opportunity record
 
-Call `create_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"opportunities"`
-- `fields`:
+- `data`:
   ```json
   {
     "name": "<opportunity name>",

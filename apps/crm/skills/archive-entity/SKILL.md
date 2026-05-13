@@ -96,7 +96,7 @@ Archive confirmed opportunities with `archive_record`.
 
 If the user opted to archive memories:
 
-Call `list_memories` with:
+Call `search` with:
 - `tags`: relevant tags that scope to this entity (e.g., the entity name, or plugin-scoped tags)
 
 For each relevant memory, call `archive_memory` with the memory's ID.
@@ -107,7 +107,8 @@ If the user opted to keep memories active, skip this step.
 
 If the user provided a reason for archiving, save it:
 
-Call `save_memory` with:
+Call `write_memory` with:
+- `mode`: `"create"` for new memories or `"update"` when a `memory_id` is supplied
 - `content`: "[Entity Name] was archived on [date]. Reason: [user's reason]. This is a [contact/company] that was previously [brief context — stage, relationship type, etc.]."
 - `tags`: `["crm", "archive-context"]`
 - `plugin_scope`: `"crm"`

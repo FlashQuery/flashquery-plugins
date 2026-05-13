@@ -28,7 +28,7 @@ This skill handles bulk organization operations that require the AI to interpret
 - Bulk memory cleanup (find old/outdated memories → confirm → archive)
 - Vault maintenance: moving/renaming documents, copying docs as starting points, removing empty directories, reconciling the database against the filesystem, and forcing file scans
 
-Tool surface in addition to `search_documents`, `apply_tags`, `archive_document`, `list_memories`, and `archive_memory`: `move_document`, `copy_document`, `remove_directory`, `reconcile_documents`, `force_file_scan`.
+Tool surface in addition to `search`, `apply_tags`, `archive_document`, `search`, and `archive_memory`: `move_document`, `copy_document`, `manage_directory`, `maintain_vault`, `maintain_vault`.
 
 ## What this skill does NOT own
 

@@ -22,7 +22,7 @@ Shows what the Product Brain can do right now, in plain language. Not a static h
 
 ### 1. Check vault state
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 

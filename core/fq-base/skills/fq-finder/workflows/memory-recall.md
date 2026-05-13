@@ -13,8 +13,8 @@ Use this workflow when the user wants to retrieve something they previously save
 
 ```
 Does the user have a specific topic in mind?
-  ├── Yes → use search_memory (semantic recall)
-  └── No, they want to browse → use list_memories (tag-filtered or recent)
+  ├── Yes → use search with entity_types: ["memories"] (semantic or mixed recall)
+  └── No, they want to browse → use search with entity_types: ["memories"], list_all: true, and optional tags
             ↓
 Does the user need the full content of a specific memory?
   └── Yes → use get_memory with the ID
@@ -22,23 +22,26 @@ Does the user need the full content of a specific memory?
 
 ---
 
-## Semantic recall: `search_memory`
+## Semantic recall: `search`
 
 ```
-search_memory(
+search(
   query: "Acme communication preferences",
+  entity_types: ["memories"],
+  mode: "semantic",  // use "mixed" when keyword/list fallback is useful
   tags: [...],        // optional; narrow by tag if appropriate
   tag_match: "any",   // optional; defaults to "any". Pass "all" to require every tag.
-  limit: 10,
-  threshold: 0.7      // default; lower to 0.5 for broader results
+  limit: 10
 )
 ```
 
 Tag intersection is genuinely useful for memory recall because memories are often multi-tagged (`#client/acme` + `#topic/pricing`, for example). Pass `tag_match: "all"` when the user's question sits at the overlap of two or more topics:
 
 ```
-search_memory(
+search(
   query: "pricing conversations",
+  entity_types: ["memories"],
+  mode: "semantic",
   tags: ["#client/acme", "#topic/pricing"],
   tag_match: "all"
 )
@@ -46,16 +49,19 @@ search_memory(
 
 Results include a similarity score, preview content (truncated at 200 chars), and a memory ID. If content is truncated, call `get_memory(memory_ids: "{id}")`.
 
-**If `search_memory` errors** (embedding unavailable): Fall back to `list_memories` with relevant tag filters.
+**If semantic search errors** (embedding unavailable): Retry with `mode: "filesystem"` plus relevant tags. Memory filesystem mode searches memory text and tags without embeddings.
 
 ---
 
-## Browsing: `list_memories`
+## Browsing: `search` list mode
 
 Use when the user wants to see what's stored without a specific query.
 
 ```
-list_memories(
+search(
+  entity_types: ["memories"],
+  list_all: true,
+  mode: "filesystem",
   tags: ["#client/acme"],   // optional
   tag_match: "any",
   limit: 50
@@ -65,8 +71,9 @@ list_memories(
 Returns memories sorted by recency (newest first), content previewed at 200 characters.
 
 **Common patterns:**
-- "Show me all my memories tagged #client/acme" → `list_memories(tags: ["#client/acme"])`
-- "What have I saved recently?" → `list_memories()` (no filters)
+- "Show me all my memories tagged #client/acme" → `search(tags: ["#client/acme"])`
+- "Show me all my memories tagged #client/acme" → `search(entity_types: ["memories"], mode: "filesystem", list_all: true, tags: ["#client/acme"])`
+- "What have I saved recently?" → `search(entity_types: ["memories"], mode: "filesystem", list_all: true)` (no filters)
 
 ---
 
@@ -79,18 +86,18 @@ get_memory(memory_ids: "c3d4e5f6-a7b8-9012-cdef-123456789012")
 get_memory(memory_ids: ["id1", "id2", "id3"])
 ```
 
-Used as a follow-up after `search_memory` or `list_memories` when the preview is insufficient.
+Used as a follow-up after `search` when the preview is insufficient.
 
 ---
 
 ## Example flows
 
 **"What did I save about Acme's communication preferences?"**
-→ `search_memory(query: "Acme communication preferences", tags: ["#client/acme"])`
+→ `search(query: "Acme communication preferences", entity_types: ["memories"], mode: "semantic", tags: ["#client/acme"])`
 → `get_memory(memory_ids: "{top result id}")` for full content
 → "You saved a memory noting that Acme prefers async communication. Full note: [content]"
 
 **"Pull up the memory about the integration timeline"**
-→ `search_memory(query: "integration timeline")`
+→ `search(query: "integration timeline", entity_types: ["memories"], mode: "semantic")`
 → `get_memory(memory_ids: "{top result id}")`
 → Present full content

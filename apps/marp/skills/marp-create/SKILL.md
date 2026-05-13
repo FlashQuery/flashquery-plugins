@@ -22,9 +22,9 @@ This skill saves decks to the FlashQuery vault and recalls user preferences acro
 
 ### Step 0 — Recall configuration
 
-At the start of every generation, call `mcp__flashquery__search_memory` to load saved configuration:
+At the start of every generation, call `mcp__flashquery__search` to load saved configuration:
 ```
-mcp__flashquery__search_memory({
+mcp__flashquery__search({
   query: "marp_config presentations_folder templates_folder",
   tags: ["marp-config"]
 })
@@ -38,7 +38,7 @@ If no config memory is found, suggest the user run `marp-configure` first, then 
 
 Use the presentation topic (from what the user said) to find the best-matching template. Call:
 ```
-mcp__flashquery__search_memory({
+mcp__flashquery__search({
   query: "<presentation topic or description the user provided>",
   tags: ["marp-template"]
 })
@@ -49,7 +49,7 @@ mcp__flashquery__search_memory({
 - **Multiple plausible matches**: list the top 2–3 by name and ask the user to choose
 - **Weak or no match**: fall back to listing all registered templates:
   ```
-  mcp__flashquery__list_memories({ tags: ["marp-template"] })
+  mcp__flashquery__search({ tags: ["marp-template"] })
   ```
   Present names and `use_for` descriptions. User picks one, or chooses "none / start from scratch".
 
@@ -81,7 +81,8 @@ After generating, ask the user where to save. Use the `presentations_folder` fro
 
 Then call:
 ```
-mcp__flashquery__create_document({
+mcp__flashquery__write_document({
+  mode: "create",
   title: "<deck title>",
   content: "<full marp markdown>",
   path: "<vault-relative path>",
@@ -157,7 +158,7 @@ details p { color: var(--body); font-size: 0.78em; margin-top: 8px; }
 abbr { text-decoration: none; border-bottom: 1px dotted #333; cursor: help; }
 ```
 
-Frontmatter: include `marp: true` (required for VS Code preview) plus any optional fields like `header: '![w:100](./logo.png)'`, `paginate: true`, `theme: default`.
+Frontmatter: include `marp: true` (required for VS Code preview) plus any optional data like `header: '![w:100](./logo.png)'`, `paginate: true`, `theme: default`.
 
 ## Light Theme
 Swap vars: `--accent: #2563eb; --dark: #fafafa; --card: #fff; --border: #eee; --body: #666; --label: #bbb; --light: #1a1a1a;`
@@ -361,7 +362,7 @@ Render progression levels as a vertical list where each level gets decreasing op
 When a deck includes non-Latin characters (Japanese, Arabic, Korean, etc.):
 1. Import both a Latin font and a script-appropriate font (e.g., `Noto Sans JP` for Japanese)
 2. Apply the script font as a secondary fallback in `font-family`
-3. Use monospace (JetBrains Mono, Space Mono) for data fields, code blocks, and structured language data
+3. Use monospace (JetBrains Mono, Space Mono) for data data, code blocks, and structured language data
 4. Example: `font-family: 'Outfit', 'Noto Sans JP', sans-serif;`
 
 ---

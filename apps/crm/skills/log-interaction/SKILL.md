@@ -56,10 +56,11 @@ Note the **business record ID** if found.
 
 ### 3. Create the interaction record
 
-Call `create_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"interactions"`
-- `fields`:
+- `data`:
   ```json
   {
     "contact_id": "<contact record ID from step 1>",
@@ -91,11 +92,12 @@ Call `insert_in_doc` with:
 
 ### 5. Update last_interaction on the contact record
 
-Call `update_record` with:
+Call `write_record` with:
+- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"`
 - `id`: the contact's record ID
-- `fields`: `{ "last_interaction": "<same ISO 8601 timestamp used in step 3>" }`
+- `data`: `{ "last_interaction": "<same ISO 8601 timestamp used in step 3>" }`
 
 This enables queries like "who haven't I spoken to recently?" — the `last_interaction` field is what makes date-arithmetic queries possible.
 

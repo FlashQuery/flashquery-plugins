@@ -29,7 +29,7 @@ Use this skill when someone asks:
 
 ### Mode 1: Structured search
 
-For finding entities by name, status, tags, or other record fields:
+For finding entities by name, status, tags, or other record data:
 
 Call `search_records` with:
 - `plugin_id`: `"crm"`
@@ -46,7 +46,7 @@ Always report for each result: name, record ID, status, and any tags.
 For answering "who works at [company]?" or "what companies is [person] connected to?":
 
 1. Call `search_records` to find the entity record (e.g., search businesses by name to find "Acme Corp").
-2. Use `search_documents` with the entity name as the `query` and `mode: "semantic"` to find the entity's vault document path.
+2. Use `search` with the entity name as the `query` and `mode: "semantic"` to find the entity's vault document path.
 3. Call `get_document` with the vault document path, `include: ["body"]`, and `sections: ["Key Contacts"]` (or the relevant relationship section). Parse the wikilinks from that section — for a company document, the Key Contacts section links are the authoritative list of associated contacts. If you need structure first, call `get_document` with `include: ["frontmatter", "headings"]`.
 4. Report the linked entities from the links. If the user wants full details on a linked contact, proceed to Mode 3.
 
@@ -60,15 +60,15 @@ Example: "Who works at Acme Corp?"
 When the user wants to read everything about a contact or business — "show me everything about Sarah", "full details on Acme":
 
 1. Use `search_records` to find the entity if you don't already have a document path.
-2. Use `search_documents` with the entity name as the `query` and `mode: "semantic"` to find the vault document path if needed.
+2. Use `search` with the entity name as the `query` and `mode: "semantic"` to find the vault document path if needed.
 3. Call `get_document` with the vault path to retrieve the full document content.
-4. Call `list_memories` with `tags` scoped to the entity (e.g., the entity's name or relevant CRM tags) to retrieve stored CRM memories for this entity — impressions, communication preferences, deal context, and company intelligence. This catches everything tagged directly to this entity.
+4. Call `search` with `tags` scoped to the entity (e.g., the entity's name or relevant CRM tags) to retrieve stored CRM memories for this entity — impressions, communication preferences, deal context, and company intelligence. This catches everything tagged directly to this entity.
 5. Present a unified view: the full document (frontmatter metadata, all sections, interaction timeline, and relationship links) followed by any memories found. Group memories by category (communication preferences, relationship context, deal context, company intelligence) for readability.
 
 ## When nothing is found
 
 If `search_records` returns no results:
-- Try `search_documents` with `mode: "semantic"` and a broader query (the record may exist but you might have the name slightly wrong)
+- Try `search` with `mode: "semantic"` and a broader query (the record may exist but you might have the name slightly wrong)
 - Suggest alternative spellings or name variations
 - Ask the user if the entity might be filed under a different name
 - Let them know they can add it using `add_contact` or `add_business` if it doesn't exist

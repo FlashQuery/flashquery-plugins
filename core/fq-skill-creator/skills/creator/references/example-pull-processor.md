@@ -16,11 +16,11 @@ documents the user drops in independently.
 
 Every field is shown with inline comments explaining its purpose, valid values,
 and defaults. In a real plugin you'd remove the comments and trim to only the
-fields you need.
+data you need.
 
 ```yaml
 # ── Plugin identity ─────────────────────────────────────────────────────────
-# All three fields are required. version must be a quoted string.
+# All three data are required. version must be a quoted string.
 id: research-notes                   # Unique plugin identifier — used as plugin_id in all MCP calls
 name: Research Notes                 # Display name shown in get_plugin_info responses
 version: "1.0"                       # Semantic version; bumping minor/patch triggers safe additive migration
@@ -64,7 +64,7 @@ documents:
                                      #   `template` is declared.
                                      # ignore (default): file is in fqc_documents but plugin ignores it.
                                      #   Use for passively monitored folders or folders where the skill
-                                     #   decides explicitly which files to track via create_record.
+                                     #   decides explicitly which files to track via write_record.
 
       track_as: inbox_items          # Required when on_added: auto-track.
                                      # Must match a table name in the tables: section below.
@@ -81,7 +81,7 @@ documents:
 
       field_map:                     # Optional. Maps frontmatter fields → plugin table columns.
         title: name                  # frontmatter key: plugin table column name
-        tags: tags                   # Applied during auto-track, sync-fields, and resurrection.
+        tags: tags                   # Applied during auto-track, sync-data, and resurrection.
                                      # If a frontmatter field is absent, the column is set to NULL.
 
       on_moved: untrack              # What to do when a tracked document moves outside this folder.
@@ -99,7 +99,7 @@ documents:
                                      # ignore (default): note the change but take no action.
                                      #   Still updates last_seen_updated_at so the same modification
                                      #   isn't re-flagged every reconciliation cycle.
-                                     # sync-fields: re-read frontmatter, re-apply field_map,
+                                     # sync-data: re-read frontmatter, re-apply field_map,
                                      #   update last_seen_updated_at. Pure metadata sync —
                                      #   FlashQuery does not read document body content.
 
@@ -116,7 +116,7 @@ documents:
         type: document_type          # Frontmatter `type` field → document_type column
         status: status
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
     # ── References: read-only monitoring ────────────────────────────────────
     - id: research-refs
@@ -138,7 +138,7 @@ documents:
         title: name
         type: document_type
       on_moved: keep-tracking
-      on_modified: sync-fields
+      on_modified: sync-data
 
 
 # ── Tables ───────────────────────────────────────────────────────────────────
@@ -263,7 +263,7 @@ The initialization skill registers the schema and creates the vault folder struc
    On re-run with a bumped version it applies safe additive migrations.
 
 2. Create vault folder structure:
-   Call `create_document` for placeholder files (or just note the folders) so
+   Call `write_document` for placeholder files (or just note the folders) so
    the vault directories exist. FlashQuery creates the folder when a document
    is written there.
 
@@ -274,8 +274,8 @@ The initialization skill registers the schema and creates the vault folder struc
 ## On first run only
 
 Seed base templates into `_plugin/research-notes/templates/`:
-- Create `research_note.md` using `create_document`
-- Create `inbox_triage.md` using `create_document`
+- Create `research_note.md` using `write_document`
+- Create `inbox_triage.md` using `write_document`
 These are auto-tracked into the `templates` table (on_added: auto-track on the
 `_plugin/research-notes/templates` folder entry).
 ```
@@ -292,7 +292,7 @@ This is the scheduled skill. The full invocation sequence on every run:
 Runs on a schedule (via /loop or cron). On each invocation:
 
 ### Step 1 — Sync the vault
-Call `force_file_scan({})`.
+Call `maintain_vault({ action: "sync" })`.
 This picks up any files dropped since the last run. Without this step,
 fqc_documents won't know about new files and reconciliation won't find them.
 
@@ -306,7 +306,7 @@ The response includes a "Pending review" summary — use it as a quick check,
 but proceed to step 3 for the structured list.
 
 ### Step 3 — Query the pending queue
-Call `clear_pending_reviews({ plugin_id: "research-notes", fqc_ids: [] })`.
+Call `clear_pending_reviews({ action: "list", plugin_id: "research-notes" })`.
 If the response shows no pending items, exit — nothing to do.
 
 ### Step 4 — Process pending items (batch of 5–10)
@@ -323,17 +323,17 @@ For each item:
   - Read the document: get_document({ identifiers: item.fqc_id })
   - Merge: preserve all user content; add template headings and sections
     that are missing. User's existing content takes precedence over template defaults.
-  - Write back: update_document({ identifier: item.fqc_id, content: merged_content })
+  - Write back: write_document({ identifier: item.fqc_id, content: merged_content })
 
 **If review_type is 'new_document' (no template was declared):**
   - Read the document: get_document({ identifiers: item.fqc_id })
   - Classify: determine document_type (research_note or reference_doc) from content
   - Route: move_document({ identifier: item.fqc_id,
                             destination: "Research/Notes/{filename}" })
-  - Update record: update_record({ plugin_id: "research-notes",
+  - Update record: write_record({ plugin_id: "research-notes",
                                    table: "inbox_items",
                                    id: <row id from search_records>,
-                                   fields: { document_type: "research_note" } })
+                                   data: { document_type: "research_note" } })
 
 **If review_type is 'resurrected':**
   - Document came back after going missing. Fields are already re-synced by FlashQuery.
@@ -346,8 +346,9 @@ For each item:
 you don't need to act on): clear it anyway. Uncleared rows persist indefinitely.
 
 ### Step 5 — Clear processed items
-Call `clear_pending_reviews({ plugin_id: "research-notes",
-                               fqc_ids: [list of processed fqc_ids] })`.
+Call `clear_pending_reviews({ action: "clear",
+                               plugin_id: "research-notes",
+                               ids: [list of processed pending review row ids] })`.
 The response shows what remains. If non-empty, the next scheduled run picks them up.
 ```
 
@@ -372,7 +373,7 @@ the watched folder.
 
 ## Key things to get right
 
-1. **`force_file_scan` before reconciliation** — a scheduled skill running cold will
+1. **`maintain_vault` before reconciliation** — a scheduled skill running cold will
    miss files dropped since the last scan unless it calls this first.
 
 2. **Record tool call before `clear_pending_reviews`** — pending review rows are only
@@ -383,7 +384,7 @@ the watched folder.
    `fqc_documents` via this column. Without it, the row can't be reconciled.
 
 4. **`last_seen_updated_at` for modification detection** — without this column,
-   `on_modified: sync-fields` has nothing to compare against.
+   `on_modified: sync-data` has nothing to compare against.
 
 5. **Template files live in the skill, not in FlashQuery** — the `template` field in
    the schema YAML is a filename hint. The skill is responsible for finding the file

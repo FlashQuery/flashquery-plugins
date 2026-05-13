@@ -7,12 +7,12 @@ Use when the user wants to apply or remove tags across a set of documents matchi
 - "Add #type/research to all my research docs"
 - "Remove the #status/draft tag from all client proposals"
 
-## Tool sequence: `search_documents` → confirm → `apply_tags`
+## Tool sequence: `search` → confirm → `apply_tags`
 
 ### 1. Find the candidate set
 
 ```
-search_documents(
+search(
   tags: ["#project/q1", "#type/deliverable"],
   tag_match: "all",
   mode: "filesystem",
@@ -69,4 +69,4 @@ apply_tags(
 
 **Validation behavior:** The tool requires at least one of `identifiers` or `memory_id`. Passing neither returns: `"Error: At least one of identifiers or memory_id must be provided."` The two parameters are conceptually mutually exclusive but not schema-enforced — if both are passed, the `identifiers` branch runs first and `memory_id` is silently ignored. Choose one per call.
 
-When to reach for the memory form: a user says "tag that memory about Acme's budget as `#client/acme`" — find the memory via `search_memory` or `list_memories`, then apply tags to its ID. For bulk memory retagging across many IDs, loop the call (one per memory).
+When to reach for the memory form: a user says "tag that memory about Acme's budget as `#client/acme`" — find the memory via `search` or `search`, then apply tags to its ID. For bulk memory retagging across many IDs, loop the call (one per memory).

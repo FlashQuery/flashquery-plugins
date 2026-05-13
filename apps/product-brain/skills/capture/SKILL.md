@@ -39,7 +39,7 @@ Good follow-up questions are specific to what was captured:
 - For a bug: "How critical is this? Is there a workaround?"
 - For an idea: "Is this connected to anything you're working on right now?"
 
-Keep it to one or two questions. This is not an interview — it's a brief moment of enrichment while the thought is warm. If the user gives short answers or seems ready to move on, respect that. Update the document with whatever they share via `append_to_doc` or `replace_doc_section`.
+Keep it to one or two questions. This is not an interview — it's a brief moment of enrichment while the thought is warm. If the user gives short answers or seems ready to move on, respect that. Update the document with whatever they share via `insert_in_doc` or `replace_doc_section`.
 
 ### Beat 3 — Surface connections
 
@@ -57,7 +57,7 @@ After capture is complete, offer the natural next step if appropriate: "There ar
 
 ### 1. Retrieve configuration and determine project
 
-Call `search_memory` with:
+Call `search` with:
 - `query`: `"product-brain-config"`
 - `tags`: `["product-brain-config"]`
 
@@ -98,22 +98,24 @@ Look up the template for the inferred document type. Call `search_records` with:
 
 Read the template content via `get_document` using the `fqc_id` from the template record. Use the template structure, but populate it with the user's content — don't leave `{{placeholder}}` markers in the output. Generate a clear, descriptive title from the content.
 
-Call `create_document` with:
+Call `write_document` with:
+- `mode`: `"create"` for new documents or `"update"` for existing documents
 - `title`: a clean, descriptive title generated from the content (e.g., "Scanner misses hidden files" not "Bug report about scanner")
-- `path`: `{vault_root}/{project_path}/{folder}/` based on the document type
+- `path`: `{vault_root}/{project_path}/{folder}/{title-slug}.md` based on the document type
 - `content`: the populated template content
 
 This is the moment the thought is safe. Everything after this is enrichment.
 
 ### 4. Register in the documents table
 
-Extract the `fqc_id` from the `create_document` response, then call `create_record` with:
+Extract the `fqc_id` from the `write_document` response, then call `write_record` with:
+- `mode`: `"create"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"documents"`
-- `fields`:
+- `data`:
   ```json
   {
-    "fqc_id": "<fqc_id from create_document>",
+    "fqc_id": "<fqc_id from write_document>",
     "project_id": "<project_id from step 1>",
     "document_type": "<inferred type>",
     "status": "active",
@@ -131,22 +133,22 @@ Call `apply_tags` with:
 - `identifiers`: the `fqc_id` of the new document
 - `add_tags`: the selected tags
 
-If the content clearly calls for a tag that doesn't exist in the vocabulary, create it — but note this explicitly: "I've tagged this with `#api-design` — want me to add it to the tag vocabulary?" If the user confirms, append the new tag to `_plugin/tags.md` via `append_to_doc`.
+If the content clearly calls for a tag that doesn't exist in the vocabulary, create it — but note this explicitly: "I've tagged this with `#api-design` — want me to add it to the tag vocabulary?" If the user confirms, append the new tag to `_plugin/tags.md` via `insert_in_doc`.
 
 ### 6. Pull the thread (Beat 2)
 
 Confirm to the user that the document was saved (briefly — title, type, path). Then ask one or two follow-up questions specific to the content. Keep it conversational and quick.
 
 If the user provides additional context, update the document:
-- For sparks: `append_to_doc` to add context to the body
+- For sparks: `insert_in_doc` to add context to the body
 - For research notes: `replace_doc_section` to update the Summary or add to Open Questions
 - For work items: `replace_doc_section` to flesh out Description or Context
 
-If additional context changed `has_open_questions` (e.g., the user described open questions in a research note), call `update_record` to sync that field.
+If additional context changed `has_open_questions` (e.g., the user described open questions in a research note), call `write_record` with `mode: "update"` and the document record ID to sync that field.
 
 ### 7. Surface connections (Beat 3)
 
-Call `search_all` with:
+Call `search` with:
 - `query`: a semantic search based on the core idea of what was captured
 
 Review the results for genuinely relevant connections — not just keyword overlap, but conceptual relevance. Present the strongest 1-3 connections to the user with a brief explanation of why each seems related.
@@ -154,18 +156,19 @@ Review the results for genuinely relevant connections — not just keyword overl
 If the user confirms a connection, write the dual link:
 
 **Navigation layer** — call `insert_doc_link` with:
-- `identifier`: the `fqc_id` of whichever document should contain the link
-- `target`: the title or fqc_id of the linked document
+- `identifiers`: the `fqc_id` of whichever document should contain the link
+- `target_identifier`: the title or fqc_id of the linked document
 - `property`: `"links"`, `"related"`, or another frontmatter property depending on the relationship
 
 Convention for Sources vs. Related:
 - **Sources** — directional, meaning "this document was informed by that one." Use when the new capture was derived from or inspired by existing content.
 - **Related** — associative, meaning "these are about the same topic." Use when both documents are peers rather than one feeding the other.
 
-**Query layer** — call `create_record` with:
+**Query layer** — call `write_record` with:
+- `mode`: `"create"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"provenance"`
-- `fields`:
+- `data`:
   ```json
   {
     "source_fqc_id": "<the origin document>",

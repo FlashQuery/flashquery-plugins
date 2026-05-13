@@ -18,7 +18,7 @@ If $ARGUMENTS contains text, skip this step and use it as the query.
 
 ### Step 2 — Search FlashQuery
 
-Call `mcp__flashquery__search_documents` with:
+Call `mcp__flashquery__search` with:
 - `query`: the user's search terms (or $ARGUMENTS)
 - `tags`: `["ai-context"]`
 - `mode`: `"mixed"`

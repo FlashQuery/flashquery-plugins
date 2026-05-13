@@ -33,6 +33,6 @@ All context files are saved to the `Contexts/` folder in your FlashQuery vault w
 ## Requirements
 
 Requires FlashQuery Core to be running and connected. The following MCP tools must be available:
-- `mcp__flashquery__create_document`
-- `mcp__flashquery__search_documents`
+- `mcp__flashquery__write_document`
+- `mcp__flashquery__search`
 - `mcp__flashquery__get_document`
