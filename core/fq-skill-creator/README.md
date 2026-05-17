@@ -20,7 +20,7 @@ Skills are auto-invoked by Claude based on what you say. You don't call them dir
 Guides skill creation with FlashQuery integration:
 - Maps skill data requirements to the appropriate FlashQuery tool categories (documents, memories, records, cross-resource)
 - Provides a complete MCP tool reference with exact parameter names, types, required/optional flags, and usage examples
-- Documents key conventions for FlashQuery-powered skills (fqc_id usage, error handling, tag patterns, section editing)
+- Documents key conventions for FlashQuery-powered skills (document UUID usage, error handling, tag patterns, section editing)
 - Covers plugin schema registration for skills that need custom structured data tables
 - Delegates to the standard `/skill-creator` for the test-evaluate-iterate workflow
 

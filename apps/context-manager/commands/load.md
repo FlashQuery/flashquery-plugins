@@ -44,8 +44,8 @@ Once the user confirms which file to load:
 
 ### Step 5 — Load the file and continue
 
-Call `mcp__flashquery__get_document` using the `fqc_id` from the search result:
-- `identifiers`: the `fqc_id` UUID from the search result
+Call `mcp__flashquery__get_document` using the `fq_id` from the search result:
+- `identifiers`: the `fq_id` UUID from the search result
 
 Check `isError`. If the load fails, report clearly.
 

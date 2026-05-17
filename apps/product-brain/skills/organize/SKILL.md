@@ -41,7 +41,7 @@ Scan before asking anything. Build a full inventory and do initial rough classif
 
 1. Read the tag vocabulary via `get_document` (`{vault_root}/_plugin/tags.md`). You'll need this for re-tagging during Phase 3.
 
-2. Call `list_vault` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations. Use `show: "files"`, `extensions: [".md"]`, and `include: ["tracking"]` when you need fqc_ids and tags for follow-up calls.
+2. Call `list_vault` recursively to inventory all documents across the vault — all project folders, the inbox, and any unexpected locations. Use `show: "files"`, `extensions: [".md"]`, and `include: ["tracking"]` when you need `fq_id` values and tags for follow-up calls.
 
 3. Call `get_document` with an array of identifiers and `include: ["frontmatter", "headings"]` to batch-inspect structure. For each document, note:
    - Apparent document type (from frontmatter or section structure)

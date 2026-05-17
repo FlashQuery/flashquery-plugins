@@ -40,7 +40,7 @@ Before pulling data, interpret the request:
 
 When the user asks about a specific person or company:
 
-1. **Find the entity**: Call `search_records` on `"contacts"` or `"businesses"` table with `filters: { name: "<name>" }`. Get the record ID and fqc_id.
+1. **Find the entity**: Call `search_records` on `"contacts"` or `"businesses"` table with `filters: { name: "<name>" }`. Get the record ID and the record's `fqc_id` column, which stores the linked document's `fq_id`.
 
 2. **Read the full vault document**: Call `get_document` with the entity's vault path. This contains the full narrative: contact information, relationship context, communication preferences, opportunities, next steps, and interaction history. Use `search` with `mode: "semantic"` and the entity name as the `query` to find the path if you don't have it.
 
@@ -88,4 +88,4 @@ Always check whether the user has stored preferences about how they want CRM int
 - This is the "intelligence synthesis" skill — it pulls from all three layers and makes judgment calls about what's most relevant. Don't just dump raw data; interpret and prioritize based on what the user asked for.
 - For "what do I know about X?" queries, start with the vault document (read it fully), then enrich with memories. The vault document is the primary source of truth for facts; memories add impressions and context.
 - For relationship discovery, use `get_document` with `include: ["frontmatter", "headings"]` first, then targeted `sections` reads for relationship sections that contain wikilinks. There is no current outline-only link graph tool.
-- `get_briefing` gives a broad snapshot across tagged documents — useful for pipeline and follow-up queries. It requires a `tags` array (e.g., `tags: ["#stage/proposal", "#stage/negotiation"]`) and optionally accepts `plugin_id: "crm"` and `tag_match: "any"`. Use it when you need to survey documents across multiple pipeline stages rather than drilling into a specific entity.
+- `get_briefing` gives a broad JSON snapshot across tagged documents, memories, and taggable CRM records — useful for pipeline and follow-up queries. It requires a `tags` array (e.g., `tags: ["#stage/proposal", "#stage/negotiation"]`) and optionally accepts `plugin_id: "crm"` and `tag_match: "any"`. Use it when you need to survey multiple pipeline stages rather than drilling into a specific entity.

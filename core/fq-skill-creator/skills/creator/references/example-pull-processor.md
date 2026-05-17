@@ -37,14 +37,14 @@ description: >                       # Optional. Human-readable purpose statemen
 #
 # IMPORTANT: "Folders discover, frontmatter remembers."
 # The folder is only how a file is *first* associated. Once FlashQuery writes
-# fqc_owner and fqc_type into the file's frontmatter, the frontmatter is the
+# fq_owner and fq_type into the file's frontmatter, the frontmatter is the
 # source of truth for the association — even if the file later moves.
 
 documents:
   types:
 
     # ── Inbox: catch-all staging area ───────────────────────────────────────
-    - id: research-inbox             # Required. Unique type ID. Becomes the fqc_type written to frontmatter.
+    - id: research-inbox             # Required. Unique type ID. Becomes the fq_type written to frontmatter.
                                      # Also used as the key in the global type registry for frontmatter-based discovery.
       folder: Research/Inbox         # Required. Vault-relative path (no leading slash).
                                      # All files in this folder (not subfolders) are candidates.
@@ -53,13 +53,13 @@ documents:
       access: read-write             # Optional. Default: read-write.
                                      # read-write: plugin may modify documents in this folder.
                                      # read-only: FlashQuery warns if the skill tries to write.
-                                     # NOTE: auto-track's frontmatter writes (fqc_owner, fqc_type)
+                                     # NOTE: auto-track's frontmatter writes (fq_owner, fq_type)
                                      # are always permitted regardless of access level.
 
       on_added: auto-track           # What to do when a genuinely new file lands here.
                                      # "New" means no plugin row (active or archived) for this fqc_id.
                                      # auto-track: FlashQuery creates a row in `track_as` table,
-                                     #   writes fqc_owner/fqc_type to frontmatter, populates field_map
+                                     #   writes fq_owner/fq_type to frontmatter, populates field_map
                                      #   columns, and inserts a fqc_pending_plugin_review row if
                                      #   `template` is declared.
                                      # ignore (default): file is in fqc_documents but plugin ignores it.
@@ -189,7 +189,7 @@ tables:
         description: "research_note or reference_doc — populated during pending review processing"
       - name: status
         type: text
-        description: "active, archived — from frontmatter status field"
+        description: "Plugin-owned status field, separate from FlashQuery's managed fq_status field"
       - name: tags
         type: text
       - name: last_seen_updated_at
@@ -300,7 +300,7 @@ fqc_documents won't know about new files and reconciliation won't find them.
 Call `search_records({ plugin_id: "research-notes", table: "inbox_items" })`.
 This runs reconcilePluginDocuments() internally, which:
   - Detects new files in watched folders (compares fqc_documents against plugin tables)
-  - Auto-tracks them (creates plugin rows, writes fqc_owner/fqc_type to frontmatter)
+  - Auto-tracks them (creates plugin rows, writes fq_owner/fq_type to frontmatter)
   - Inserts fqc_pending_plugin_review rows for any that have a template declared
 The response includes a "Pending review" summary — use it as a quick check,
 but proceed to step 3 for the structured list.
@@ -316,14 +316,14 @@ For each item:
 **If review_type is 'template_available':**
   - The template filename is in item.context.template
     (e.g., "inbox_triage.md" or "research_note.md")
-  - Look up that template's fqc_id via:
+  - Look up that template record's `fqc_id` column (the linked template document `fq_id`) via:
     search_records({ plugin_id: "research-notes", table: "templates",
                      filters: { name: item.context.template } })
-  - Read the template: get_document({ identifiers: template_fqc_id })
+  - Read the template: get_document({ identifiers: template_fq_id })
   - Read the document: get_document({ identifiers: item.fqc_id })
   - Merge: preserve all user content; add template headings and sections
     that are missing. User's existing content takes precedence over template defaults.
-  - Write back: write_document({ identifier: item.fqc_id, content: merged_content })
+  - Write back: write_document({ mode: "update", identifier: item.fqc_id, content: merged_content })
 
 **If review_type is 'new_document' (no template was declared):**
   - Read the document: get_document({ identifiers: item.fqc_id })
@@ -357,7 +357,7 @@ The response shows what remains. If non-empty, the next scheduled run picks them
 ## Part 5: Frontmatter-Based Discovery (Path 2)
 
 Files dropped outside watched folders can still be auto-tracked if their YAML
-frontmatter includes `fqc_type: research-inbox` (or any type ID declared in the
+frontmatter includes `fq_type: research-inbox` (or any type ID declared in the
 schema). FlashQuery looks up the type in the global registry and applies the same
 policies as if the file had landed in the declared folder.
 

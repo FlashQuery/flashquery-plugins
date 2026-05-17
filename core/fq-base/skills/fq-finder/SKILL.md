@@ -26,11 +26,12 @@ This skill orchestrates FlashQuery Core's search and retrieval tools. Its job is
 - Browsing the vault by folder path and recency (filesystem-shaped navigation)
 - Recalling memories (semantic search, tag-filtered browsing)
 - Cross-entity search (documents + memories in one call)
+- Generic plugin record lookup when the user supplies the plugin/table context
 - Getting briefings and overviews on a topic
 - Following up on search results with full content retrieval
 - LLM usage reporting: cost summaries, per-purpose and per-model breakdowns, trace-level call audit via `get_llm_usage`
 
-Plugin record search is intentionally **not** part of fq-base — plugin-specific skills (e.g., `fq-crm`) own the schema context needed to interpret records correctly. If the user is asking about structured plugin data and a plugin skill is available, route there.
+Plugin-specific skills (e.g., `crm`) should handle domain-specific interpretation when available. fq-base still covers the generic record tools for explicit requests such as "search records in plugin X table Y" or "inspect this record id."
 
 ## Routing heuristic
 
@@ -45,6 +46,7 @@ Read the user's intent and route to the appropriate workflow:
 | "Give me a briefing on X" / "overview of project X" | → [Briefing](workflows/briefing.md) |
 | "Show me everything from last week" / "what's recent?" | → [File Browse](workflows/file-browse.md) (or [Document Search](workflows/document-search.md) in filesystem mode) |
 | "How much have we spent on AI?" / "show me LLM usage" / "what did that run cost?" | → [LLM Usage Reporting](workflows/llm-usage-reporting.md) |
+| "Search records in plugin X/table Y" / "show pending reviews" | → [Plugin Records](workflows/plugin-records.md) |
 
 When uncertain, default to [Unified Search](workflows/unified-search.md) — it covers both documents and memories in one call.
 
@@ -60,7 +62,7 @@ Don't just dump search results. After retrieving content:
 ## Error handling
 
 - **Semantic search unavailable** — if `search` returns an embedding error, fall back to `search` with `mode: "filesystem"` and relevant filters.
-- **Ambiguous filename** — if a document tool returns an ambiguity error, use the full path or fqc_id instead.
+- **Ambiguous filename** — if a document tool returns an ambiguity error, use the full path or `fq_id` instead.
 - **No results when the user just added or moved files** — run `maintain_vault(action: "sync")` to reindex and retry. If they moved files in a way that left stale paths in the database, hand off to fq-organizer's [vault-maintenance](../fq-organizer/workflows/vault-maintenance.md) workflow for a sync + repair pass.
 - **No results otherwise** — let the user know nothing was found and offer to broaden the search or try different terms.
 - **Supabase not configured (`get_llm_usage` isError)** — tell the user that LLM usage reporting requires a Supabase connection and it doesn't appear to be configured.

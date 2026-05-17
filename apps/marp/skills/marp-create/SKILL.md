@@ -56,7 +56,7 @@ mcp__flashquery__search({
 **Once a template is selected**, read it:
 ```
 mcp__flashquery__get_document({
-  identifiers: "<fqc_id from the template memory>"
+  identifiers: "<fq_id/fqc_id stored in the template memory>"
 })
 ```
 Use its frontmatter, CSS, and slide structure as the base. Merge the user's content in — do not override the template's design choices unless the user asks.
@@ -91,7 +91,7 @@ mcp__flashquery__write_document({
 })
 ```
 
-Check `isError`. If successful, **parse `fqc_id` from the response** — use this UUID for all future references to this deck. Report the vault path and `fqc_id` to the user.
+Check `isError`. If successful, **parse `fq_id` from the JSON response** — use this UUID for all future references to this deck. Report the vault path and `fq_id` to the user.
 
 If a file already exists at the path, offer to use a different path or update the existing document.
 

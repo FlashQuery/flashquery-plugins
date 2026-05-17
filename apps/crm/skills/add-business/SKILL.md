@@ -49,7 +49,7 @@ If a matching business is found, tell the user: "A business named [Name] already
 ### 2. Create the vault document (document-first)
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: the business name
 - `path`: the full file path including the filename with `.md` extension (e.g., `CRM/Acme Corp.md` or `CRM/Companies/Acme Corp.md`). Combine the vault folder from step 0 with the business name. Do **not** pass a directory path — `write_document` requires a complete file path.
 - `content`: a populated version of the company profile template. Structure the body as follows:
@@ -78,26 +78,23 @@ Call `write_document` with:
 
 - Industry tag if applicable (e.g., `#industry/energy`, `#industry/saas`, `#industry/healthcare`).  Do not include status tags — those are managed by the system.
 
-### 3. Parse the fqc_id from the response
+### 3. Parse the document `fq_id` from the response
 
-The `write_document` response contains a line like:
-```
-fqc_id: 550e8400-e29b-41d4-a716-446655440000
-```
+The `write_document` response is JSON and contains an `fq_id` field.
 
-Extract that UUID — you will need it in the next step.
+Extract that UUID — you will need it in the next step. The CRM record stores the same UUID in its `fqc_id` column so it can link back to the vault document.
 
 ### 4. Create the database record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"crm"`
 - `table`: `"businesses"`
 - `data`:
   ```json
   {
     "name": "<business name>",
-    "fqc_id": "<the UUID you parsed from step 3>",
+    "fqc_id": "<the document fq_id you parsed from step 3>",
     "tags": "<comma-separated tags, e.g. '#industry/energy'>"
   }
   ```

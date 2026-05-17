@@ -38,14 +38,12 @@ Memory cleanup requires human judgment. Present memories with content previews a
 
 If a preview is truncated, call `get_memory(memory_ids: "{id}")` for the full content before the user decides.
 
-### 3. Execute: `archive_memory` (loop per memory)
+### 3. Execute: `archive_memory`
 
-`archive_memory` takes a single ID at a time — loop through the confirmed IDs:
+`archive_memory` accepts a single ID or an array of IDs via `memory_ids`:
 
 ```
-archive_memory(memory_id: "c3d4e5f6-a7b8-9012-cdef-123456789012")
-archive_memory(memory_id: "d4e5f6a7-b8c9-0123-defa-234567890123")
-// ...
+archive_memory(memory_ids: ["c3d4e5f6-a7b8-9012-cdef-123456789012", "d4e5f6a7-b8c9-0123-defa-234567890123"])
 ```
 
 ### 4. Report results
@@ -56,4 +54,4 @@ Tell the user how many memories were archived and note any failures.
 
 ## Reversibility note
 
-`archive_memory` is a soft delete — archived memories are excluded from `search` and `search` but are preserved in the database. There is no unarchive tool; recovery would require direct database access. Mention this to users who seem to think archiving is permanent deletion.
+`archive_memory` is a soft delete — archived memories are excluded from normal `search` results but are preserved in the database. There is no unarchive tool; recovery would require direct database access. Mention this to users who seem to think archiving is permanent deletion.

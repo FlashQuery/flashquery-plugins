@@ -16,7 +16,7 @@ Required patterns:
 - Create: `mode: "create"`, `path`, `title`; optional `content`, `frontmatter`, `tags`.
 - Update: `mode: "update"`, `identifier`; at least one of `content`, `title`, `frontmatter`, or `tags`.
 - `tags` replaces the full tag list. Use `apply_tags` for additive/removal tag edits.
-- `frontmatter` accepts custom fields only. Managed data such as `fq_id`, `fqc_id`, `status`, `created`, `updated`, tags, and instance identifiers are rejected.
+- `frontmatter` accepts custom fields only. Managed data such as `fq_id`, `fq_instance`, `fq_status`, `fq_created`, `fq_updated`, `fq_archived_at`, and `fq_tags` are rejected.
 
 Example:
 ```js

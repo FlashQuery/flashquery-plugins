@@ -42,7 +42,7 @@ If the reference is ambiguous and multiple results match, present the top candid
 ### 2. Update the database record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"update"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"documents"`
 - `id`: the record ID of the target document
@@ -57,8 +57,8 @@ Call `write_record` with:
 ### 3. Update the vault document frontmatter
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
-- `identifier`: the `fqc_id` of the target document
+- `mode`: `"update"`
+- `identifier`: the record's `fqc_id` value, which stores the target document's `fq_id`
 - `frontmatter`: `{ "status": "<new status>" }`
 
 This keeps the vault file and database record in sync.

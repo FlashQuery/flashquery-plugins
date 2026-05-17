@@ -40,7 +40,7 @@ Call `search_records` with:
 
 If multiple results match, ask the user to clarify. If no results, tell the user the entity wasn't found.
 
-From the result, note the **record ID**, **fqc_id**, and current **tags**.
+From the result, note the **record ID**, the **fqc_id column** (which stores the linked document's `fq_id`), and current **tags**.
 
 ### 2. Confirm with the user
 
@@ -60,21 +60,19 @@ Wait for confirmation before proceeding. The memory question matters — sometim
 ### 3. Archive the vault document
 
 Call `archive_document` with:
-- `identifiers`: array containing the entity's document path or fqc_id (e.g., `["CRM/Acme Corp.md"]`)
+- `identifiers`: array containing the entity's document path or linked document `fq_id` (e.g., `["CRM/Acme Corp.md"]`)
 
-This sets the document's frontmatter `status` to `archived` and updates the database row accordingly.
+This sets the document's managed `fq_status` frontmatter field to `archived` and updates the database row accordingly.
 
 ### 4. Archive the database record
 
 Call `archive_record` with:
-- `plugin_id`: `"crm"`
-- `table`: `"contacts"` or `"businesses"`
-- `id`: the record ID from step 1
+- `targets`: one entry containing `plugin_id: "crm"`, the resolved `table` (`"contacts"` or `"businesses"`), and the record ID from step 1
 
 ### 5. Update tags on the document
 
 Call `apply_tags` with:
-- `identifiers`: array containing the entity's document path or fqc_id (e.g., `["CRM/Acme Corp.md"]`)
+- `identifiers`: array containing the entity's document path or linked document `fq_id` (e.g., `["CRM/Acme Corp.md"]`)
 - `remove_tags`:  `#stage/` tags (archived entities are no longer in the pipeline)
 
 ### 6. Archive related opportunities (if applicable)
@@ -90,7 +88,7 @@ For any active opportunities found, ask the user:
 
 > "There are [N] active opportunities linked to [Entity Name]: [list names]. Should I archive those too, or keep them active?"
 
-Archive confirmed opportunities with `archive_record`.
+Archive confirmed opportunities with `archive_record`, using `targets` entries for each opportunity record.
 
 ### 7. Archive related memories (if user confirmed)
 
@@ -99,7 +97,7 @@ If the user opted to archive memories:
 Call `search` with:
 - `tags`: relevant tags that scope to this entity (e.g., the entity name, or plugin-scoped tags)
 
-For each relevant memory, call `archive_memory` with the memory's ID.
+For each relevant memory, call `archive_memory` with `memory_ids` set to the memory's ID. Batch archiving can pass an array of IDs.
 
 If the user opted to keep memories active, skip this step.
 

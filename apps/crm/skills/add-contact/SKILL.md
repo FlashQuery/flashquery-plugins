@@ -49,7 +49,7 @@ If a matching contact is found, tell the user: "A contact named [Name] already e
 ### 2. Create the vault document (document-first)
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: the contact's full name
 - `path`: the full file path including the filename with `.md` extension (e.g., `CRM/Sarah Chen.md` or `CRM/Contacts/Sarah Chen.md`). Combine the vault folder from step 0 with the contact's name. Do **not** pass a directory path — `write_document` requires a complete file path.
 - `content`: a populated version of the contact note template. Structure the body as follows:
@@ -81,26 +81,23 @@ Call `write_document` with:
 
 - `tags`: any relevant tags for categorization (e.g., `#stage/qualified`, `#relationship/warm`). Do not include status tags — those are managed by the system.
 
-### 3. Parse the fqc_id from the response
+### 3. Parse the document `fq_id` from the response
 
-The `write_document` response contains a line like:
-```
-fqc_id: 550e8400-e29b-41d4-a716-446655440000
-```
+The `write_document` response is JSON and contains an `fq_id` field.
 
-Extract that UUID — you will need it in step 4. This is the stable identifier that links the vault document to the database record.
+Extract that UUID — you will need it in step 4. This is the stable document identifier. The CRM record stores the same UUID in its `fqc_id` column so it can link back to the vault document.
 
 ### 4. Create the database record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"`
 - `data`:
   ```json
   {
     "name": "<contact's full name>",
-    "fqc_id": "<the UUID you parsed from step 3>",
+    "fqc_id": "<the document fq_id you parsed from step 3>",
     "tags": "<comma-separated tags if any, e.g. '#stage/qualified,#relationship/warm'>"
   }
   ```
@@ -113,13 +110,13 @@ If the user mentioned a company the contact works at:
 a. Call `search_records` with `plugin_id: "crm"`, `table: "businesses"`, and `filters: { name: "<business name>" }` to find the business record.
 
 b. If the business is found, add a bidirectional wikilink between the two documents:
-   - Call `insert_in_doc` on the **contact's vault document** (the fqc_id from step 3) with:
-     - `identifier`: the contact's fqc_id
+   - Call `insert_in_doc` on the **contact's vault document** (the `fq_id` from step 3) with:
+     - `identifier`: the contact's document `fq_id`
      - `content`: `"[[Business Name]]"`
      - `heading`: `"Relationship Context"`
      - `position`: `"end_of_section"`
-   - Call `insert_in_doc` on the **business's vault document** (use `search_records` on `"businesses"` to get its fqc_id) with:
-     - `identifier`: the business's fqc_id
+   - Call `insert_in_doc` on the **business's vault document** (use `search_records` on `"businesses"` to get its `fqc_id` column, which stores the business document `fq_id`) with:
+     - `identifier`: the business document `fq_id`
      - `content`: `"[[Contact Name]]"`
      - `heading`: `"Key Contacts"`
      - `position`: `"end_of_section"`

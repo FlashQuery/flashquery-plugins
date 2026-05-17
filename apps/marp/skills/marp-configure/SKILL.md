@@ -93,7 +93,7 @@ mcp__flashquery__write_document({
 
 **4c.** Check `isError`. If a document already exists at that path, ask the user whether to overwrite (use `mcp__flashquery__write_document`) or skip.
 
-**4d.** Parse `fqc_id` from each successful response.
+**4d.** Parse `fq_id` from each successful JSON response.
 
 ---
 
@@ -105,7 +105,7 @@ For each installed template, call `mcp__flashquery__write_memory`:
 ```
 mcp__flashquery__write_memory({
   mode: "create",
-  content: "[marp_template] name: Default Minimal — fqc_id: <uuid> — path: <templates_folder>/marp-default-minimal.md — use_for: general presentations, quick start, no specific brand, simple structure, minimal slides",
+  content: "[marp_template] name: Default Minimal — fq_id: <uuid> — path: <templates_folder>/marp-default-minimal.md — use_for: general presentations, quick start, no specific brand, simple structure, minimal slides",
   tags: ["marp-config", "marp-template"]
 })
 ```
@@ -114,7 +114,7 @@ mcp__flashquery__write_memory({
 ```
 mcp__flashquery__write_memory({
   mode: "create",
-  content: "[marp_template] name: Default Scaffold — fqc_id: <uuid> — path: <templates_folder>/marp-default-scaffold.md — use_for: general presentations, full structure, agenda, multiple sections, title slide, closing slide, team presentations",
+  content: "[marp_template] name: Default Scaffold — fq_id: <uuid> — path: <templates_folder>/marp-default-scaffold.md — use_for: general presentations, full structure, agenda, multiple sections, title slide, closing slide, team presentations",
   tags: ["marp-config", "marp-template"]
 })
 ```

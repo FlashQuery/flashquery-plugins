@@ -11,7 +11,7 @@ Use the `fq-skill-creator:creator` skill to run the complete skill creation work
 
 1. **Understand the skill requirements** — clarify what the skill does, what data it needs to work with (documents, memories, records, or a mix), and what search patterns matter
 2. **Identify which FlashQuery tools the skill needs** — map data requirements to the right tool categories using the decision guide in the skill
-3. **Write the skill body** — produce the SKILL.md with FlashQuery tool calls wired in correctly, following all FlashQuery conventions (fqc_id usage, error handling, tag patterns, section editing)
+3. **Write the skill body** — produce the SKILL.md with FlashQuery tool calls wired in correctly, following all FlashQuery conventions (document UUID usage, error handling, tag patterns, section editing)
 4. **Hand off to `/skill-creator`** — delegate testing, evaluation, and iteration to the standard skill-creator workflow
 
 ## Using the argument
@@ -24,10 +24,10 @@ If no argument was provided, open with: "What kind of skill would you like to bu
 
 The skill body you produce must follow these FlashQuery conventions:
 
-- Use `fqc_id` (UUID), not file paths — parse it from `write_document` responses
+- Use document UUIDs, not file paths — parse `fq_id` from `write_document` responses. Plugin records may store that value in a column named `fqc_id`.
 - Check `isError` on every tool response before proceeding
 - Write lock recovery: retry once after a brief pause; inform the user on second failure
-- Tag conventions: `#status/*` prefix for status tags; one status tag per document; use `apply_tags` for incremental changes
+- Tag conventions: `#status/*` may be a skill-level vocabulary convention, but FlashQuery only enforces duplicate-tag validation; use `apply_tags` for incremental changes
 - Section editing over full rewrites: prefer `replace_doc_section` or `insert_in_doc` over `write_document` for partial changes
 - Semantic search latency: newly created documents may not appear in semantic search immediately — this is normal
 

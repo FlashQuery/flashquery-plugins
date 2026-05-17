@@ -118,7 +118,7 @@ mcp__flashquery__write_document({
 
 **After the call:** Check the response for `isError`. If `isError` is true, report the error to the user and suggest they check FlashQuery connectivity. If the error is a write lock, wait a moment and retry once — if it fails again, inform the user.
 
-**On success:** Parse the `fqc_id` from the response (a UUID like `550e8400-e29b-41d4-a716-446655440000`). Store it for reference — it's the stable identifier for this document.
+**On success:** Parse the `fq_id` from the JSON response (a UUID like `550e8400-e29b-41d4-a716-446655440000`). Store it for reference — it's the stable identifier for this document.
 
 #### Step 4 — Report back to the user
 
@@ -127,7 +127,7 @@ After a successful save, confirm:
 - Location: `Contexts/[filename].md`
 - Tagged: `ai-context`
 - Brief note on what was captured (e.g., "Captured 3 key decisions and 2 open threads about FlashQuery MCP transport design.")
-- The `fqc_id` if the user may want to reference it directly
+- The `fq_id` if the user may want to reference it directly
 
 If the save fails, report the error clearly and suggest the user check FlashQuery connectivity.
 
@@ -189,11 +189,11 @@ Once the user confirms the file to load, ask:
 
 #### Step 5 — Load the file and continue
 
-Call `mcp__flashquery__get_document` using the `fqc_id` from the search result (preferred over path for stability):
+Call `mcp__flashquery__get_document` using the `fq_id` from the search result (preferred over path for stability):
 
 ```
 mcp__flashquery__get_document({
-  identifiers: "<fqc_id from search result>"
+  identifiers: "<fq_id from search result>"
 })
 ```
 
@@ -209,5 +209,5 @@ Then respond to the user's prompt with full awareness of the loaded context — 
 - **No verbatim transcript access:** Claude reconstructs from memory. The "Conversation Reconstruction" section is a best-effort summary, not a raw export.
 - **Self-contained:** The saved file should be fully self-contained — a future Claude instance with no other context should be able to orient itself entirely from the file.
 - **Tag discipline:** Always apply the `ai-context` tag on save; always filter by it on search. This keeps context files findable and separable from other vault documents.
-- **Use fqc_id, not paths:** When referencing a document after creation, always use the UUID (`fqc_id`) returned by `write_document`. Paths can change if the user reorganizes their vault.
+- **Use fq_id, not paths:** When referencing a document after creation, always use the UUID (`fq_id`) returned by `write_document`. Paths can change if the user reorganizes their vault.
 - **Error handling:** Always check `isError` on every tool response before proceeding. Write lock errors should be retried once; persistent errors should be reported clearly to the user.

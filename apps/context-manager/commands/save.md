@@ -85,7 +85,7 @@ Call `mcp__flashquery__write_document` with:
 
 Check `isError` on the response. If the save fails with a write lock, wait a moment and retry once. If it fails again, report the error and suggest the user check FlashQuery connectivity.
 
-Parse the `fqc_id` from a successful response.
+Parse the `fq_id` from a successful JSON response.
 
 ### Step 4 — Confirm to the user
 

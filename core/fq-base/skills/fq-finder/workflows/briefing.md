@@ -17,6 +17,7 @@ get_briefing(
   tags: ["#client/acme"],      // required — scope by tags
   tag_match: "any",            // optional; defaults to "any". Pass "all" to require every tag.
   limit: 20,                   // per section; default is 20
+  entity_types: ["documents", "memories", "records"], // optional
   plugin_id: "crm"             // optional — include plugin records
 )
 ```
@@ -28,7 +29,7 @@ get_briefing(tags: ["#client/acme"])            // tag_match defaults to "any"
 get_briefing(tags: ["#client/acme", "#type/proposal"], tag_match: "all")   // must have both
 ```
 
-**Plugin records are not filtered by `tags`.** When `plugin_id` is provided, the tool pulls all active records from that plugin's tables regardless of the tag criteria — the `tags` filter only narrows the Documents and Memories sections of the response. Tell the user if it matters for their question.
+When `plugin_id` is provided, `get_briefing` includes records from that plugin's taggable tables (`tags` or `tag` column) and applies the same tag criteria to those rows. If the plugin has no taggable tables, the response may include a `plugin_no_taggable_tables` warning.
 
 ## Steps
 
@@ -38,10 +39,7 @@ get_briefing(tags: ["#client/acme", "#type/proposal"], tag_match: "all")   // mu
 
 2. **Decide on `plugin_id`** — include if the user's context involves structured plugin data (contacts, opportunities, etc.).
 
-3. **Call `get_briefing`.** The response has three sections:
-   - `## Documents` — matching vault docs with titles, paths, fqc_ids
-   - `## Memories` — matching memories with content previews
-   - `## Plugin Records` — (only if `plugin_id` provided) recent records from all plugin tables
+3. **Call `get_briefing`.** The response is JSON with `generated_at`, `entity_types`, `tags`, `tag_match`, `limit`, optional `warnings`, and `groups`. Each group corresponds to a requested tag and contains mixed `items` from documents, memories, and taggable plugin records.
 
 4. **Drill into specifics if needed.** Call `get_document` on the most relevant doc, or `get_memory` on a truncated memory.
 

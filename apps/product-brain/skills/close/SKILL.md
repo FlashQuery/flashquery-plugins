@@ -61,26 +61,26 @@ Look up the daily log template. Call `search_records` with:
 - `table`: `"templates"`
 - `filters`: `{ "document_type": "daily_log" }`
 
-Read the template via `get_document` using the `fqc_id` from the template record.
+Read the template via `get_document` using the template record's `fqc_id` column. That column stores the linked template document's `fq_id`.
 
 Create the daily log document. Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: a date-based title (e.g., `Daily Log — 2026-04-17`)
-- `path`: the project root (e.g., `product-brain/flashquery/`) — daily logs live at the project level, not in a subfolder
+- `path`: a complete markdown file path at the project root (e.g., `product-brain/flashquery/daily-log-2026-04-17.md`) — daily logs live at the project level, not in a subfolder
 - `content`: the populated daily log template with the four sections filled in from the conversation
 
 ### 4. Register and tag the document
 
-Extract the `fqc_id` from the response, then:
+Extract the document `fq_id` from the response, then:
 
 a. Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
    - `data`:
      ```json
      {
-       "fqc_id": "<fqc_id>",
+       "fqc_id": "<fq_id>",
        "project_id": "<active project id>",
        "document_type": "daily_log",
        "status": "active",
@@ -91,7 +91,7 @@ a. Call `write_record` with:
 
 b. Read the tag vocabulary via `get_document` (path: `{vault_root}/_plugin/tags.md`). Apply any relevant tags via `apply_tags` — daily logs typically don't need many tags, but if the user mentioned blockers, tag with `#blocked`; if they flagged a priority, tag with `#priority`.
 
-c. Set frontmatter tags and status via `write_document`.
+c. Set the plugin-owned `status` frontmatter field via `write_document`, and use top-level `tags` or `apply_tags` for document tags.
 
 ### 5. Save preferences (if stated)
 

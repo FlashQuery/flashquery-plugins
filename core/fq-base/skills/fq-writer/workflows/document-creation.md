@@ -19,20 +19,20 @@ Does the user want to link this doc to an existing one?
 **Tools:** `write_document` → (optionally) `apply_tags`
 
 1. Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
    - `mode` — `"create"`
    - `title` — derive from user's request; ask if unclear
    - `content` — the markdown body; write it fully before calling
    - `path` — required; infer from context (e.g., `"clients/acme/notes.md"`). Include the `.md` filename.
    - `tags` — infer appropriate tags from context (see Tag conventions below)
-   - `frontmatter` — optional object of additional frontmatter fields merged in at creation time. Use this to set custom fields (e.g., `client`, `project`, `priority`) without a follow-up update. FlashQuery rejects managed fields such as `fq_id`, `fqc_id`, `status`, `created`, `updated`, tags, and instance identifiers.
+   - `frontmatter` — optional object of additional frontmatter fields merged in at creation time. Use this to set custom fields (e.g., `client`, `project`, `priority`) without a follow-up update. FlashQuery rejects managed fields such as `fq_id`, `fq_instance`, `fq_status`, `fq_created`, `fq_updated`, `fq_archived_at`, and `fq_tags`.
 
-2. Parse the `fqc_id` from the response:
+2. Parse the `fq_id` from the JSON response:
    ```
    { "mode": "create", "path": "clients/acme/notes.md", "fq_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", ... }
    ```
 
-3. If additional tags are needed beyond what was set in step 1, call `apply_tags` separately with the returned fqc_id (or the path).
+3. If additional tags are needed beyond what was set in step 1, call `apply_tags` separately with the returned `fq_id` (or the path).
 
 4. Tell the user where the document was saved (the vault-relative path from the response).
 

@@ -176,8 +176,8 @@ Register the CRM database schema and configure vault folders.
 
 | Table | Key Columns | Purpose |
 |-------|-------------|---------|
-| **contacts** | name, last_interaction, tags, fqc_id | Contact lookup, pipeline filtering, follow-up queries ("who haven't I talked to?") |
-| **businesses** | name, tags, fqc_id | Company lookup, industry filtering |
+| **contacts** | name, last_interaction, tags, fqc_id | Contact lookup, pipeline filtering, follow-up queries ("who haven't I talked to?"); `fqc_id` stores the linked document `fq_id` |
+| **businesses** | name, tags, fqc_id | Company lookup, industry filtering; `fqc_id` stores the linked document `fq_id` |
 | **interactions** | contact_id, business_id, date, tags | Interaction history, date-range queries, type filtering |
 | **opportunities** | name, contact_id, business_id, close_date, tags | Pipeline tracking, closing forecasts, stage filtering |
 

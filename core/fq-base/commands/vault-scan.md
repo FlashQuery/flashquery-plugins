@@ -19,7 +19,7 @@ Call `maintain_vault(action: "sync", background: true)` and let the user know th
 After a synchronous scan, report all four counts — even zeros confirm coverage:
 
 - **New** — files discovered that FQC wasn't tracking
-- **Moved** — files that changed path (identified by fqc_id frontmatter)
+- **Moved** — files that changed path (identified by `fq_id` frontmatter)
 - **Deleted/missing** — files FQC tracked but can no longer find (marked as `missing` — a soft, recoverable status)
 - **Hash mismatches** — files externally edited since the last scan (re-embedding triggered)
 

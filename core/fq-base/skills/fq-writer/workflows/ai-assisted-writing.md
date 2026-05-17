@@ -51,22 +51,23 @@ Use when the user wants AI to draft brand-new content that becomes a new documen
 3. Review the generated text. If the output needs a follow-up call (e.g., to translate, summarize, or reformat), call `call_model` again with the same `trace_id` to keep cost tracking cumulative.
 
 4. Call `write_document` with the generated content:
+   - `mode` — `"create"`
    - `title` — derive from the user's request or the generated content's first heading
    - `content` — the AI-generated body (full markdown)
    - `path` — infer or ask if context doesn't make it obvious
    - `tags` — infer from context
 
-5. Parse the `fqc_id` from the response.
+5. Parse the `fq_id` from the JSON response.
 
 6. Optionally call `write_memory` for key facts surfaced in the generated content.
 
-7. Tell the user the document was saved, show its path, and (if `trace_id` was used) mention the token/cost totals from `trace_cumulative` in the response.
+7. Tell the user the document was saved, show its path, and (if `trace_id` was used) mention the token/cost totals from `metadata.trace_cumulative` in the response.
 
 ---
 
 ## Generate-and-update
 
-**Tools:** `call_model` → `write_document` (or `insert_in_doc` / `insert_in_doc` / `replace_doc_section`)
+**Tools:** `call_model` → `write_document` (or `insert_in_doc` / `replace_doc_section`)
 
 Use when the user wants AI to rewrite, extend, or transform part of an existing document.
 
@@ -86,14 +87,16 @@ Use when the user wants AI to rewrite, extend, or transform part of an existing 
 
 ## Using trace_id for multi-call workflows
 
-Set a `trace_id` (any string, e.g. a UUID) on the first `call_model` call and reuse it on all subsequent calls in the same workflow. The response will include a `trace_cumulative` block:
+Set a `trace_id` (any string, e.g. a UUID) on the first `call_model` call and reuse it on all subsequent calls in the same workflow. The response will include a `metadata.trace_cumulative` block:
 
 ```json
-"trace_cumulative": {
+"metadata": {
+  "trace_cumulative": {
   "total_calls": 3,
   "total_tokens": { "input": 1840, "output": 612 },
   "total_cost_usd": 0.0031,
   "total_latency_ms": 8200
+  }
 }
 ```
 

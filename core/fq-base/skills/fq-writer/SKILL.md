@@ -28,8 +28,9 @@ This skill orchestrates FlashQuery's document and memory write tools. Its job is
 - Modifying existing documents (body content, frontmatter, tags, links)
 - Section-scoped edits: inserting at a specific heading/position, replacing a specific section's content
 - Saving, updating, and archiving memories
+- Generic plugin record writes when the user supplies the plugin/table schema context
 
-Tool surface includes `write_document`, `insert_in_doc`, `replace_doc_section`, `apply_tags`, `insert_doc_link`, `archive_document`, `write_memory`, `archive_memory`, plus `get_document` as the read-side helper for body, frontmatter, headings, and section extraction. When LLM is configured: `call_model` for AI-assisted content generation.
+Tool surface includes `write_document`, `insert_in_doc`, `replace_doc_section`, `apply_tags`, `insert_doc_link`, `archive_document`, `remove_document`, `write_memory`, `archive_memory`, `write_record`, `get_record`, `archive_record`, plus `get_document` as the read-side helper for body, frontmatter, headings, and section extraction. When LLM is configured: `call_model` for AI-assisted content generation. Use `call_macro` only for explicit macro execution requests.
 
 ## Routing heuristic
 
@@ -48,6 +49,8 @@ Read the user's intent and route to the appropriate workflow:
 | Archive or forget a memory | → [Memory Management](workflows/memory-management.md) |
 | Use AI to generate or draft content, then save it | → [AI-Assisted Writing](workflows/ai-assisted-writing.md) |
 | Pass vault documents/templates into `call_model` without reading them into host context | → [Model Reference Delegation](workflows/model-reference-delegation.md) |
+| Create, update, or archive a plugin record with known plugin/table context | → [Record Management](workflows/record-management.md) |
+| Run an explicit FlashQuery macro | → [Macro Execution](workflows/macro-execution.md) |
 
 If the request involves both creating a document AND saving a memory (e.g., writing up meeting notes that also surface a key takeaway), handle both in sequence: document creation first, then `write_memory`.
 
@@ -66,14 +69,14 @@ If the user names a heading or describes a position, the section-editing tools a
 
 Always check `isError` on every tool response before proceeding. Common recoveries:
 - **Write lock timeout** — retry once after 3 seconds. Tell the user if it fails again.
-- **File not tracked (no fqc_id)** — call `get_document` first to auto-provision, then retry the mutation.
-- **Tag validation failure** — check for multiple `#status/*` tags; use `apply_tags` with `remove_tags` to resolve conflicts before adding new ones.
-- **File already exists** — use `write_document` or `insert_in_doc` instead of `write_document`.
+- **File not tracked (no `fq_id`)** — call `get_document` first to auto-provision FlashQuery metadata, then retry the mutation.
+- **Tag validation failure** — FlashQuery rejects duplicate tags after trimming/lowercasing. Normalize the tag list, remove duplicates, then retry.
+- **File already exists** — use `write_document(mode: "update")`, `insert_in_doc`, or `replace_doc_section` depending on whether the user wants a full-body or targeted edit.
 - **LLM not configured** — `call_model` returns `isError: true` with "LLM is not configured." Fall back to prompting the user to provide the content manually, or skip AI generation and proceed with a placeholder body.
 
 ## Key conventions
 
-- Always prefer `fqc_id` over vault paths for any reference you need to store or use later — paths can change when users rename or move files.
-- After `write_document`, parse the `fqc_id` from the second line of the response (`fqc_id: {uuid}`).
+- Always prefer `fq_id` over vault paths for any document reference you need to store or use later — paths can change when users rename or move files.
+- After `write_document`, parse the `fq_id` from the JSON response.
 - `apply_tags` is always preferred over passing `tags` in `write_document` for incremental add/remove. Use `write_document`'s `tags` parameter only when replacing the entire tag list.
 - Embeddings are fire-and-forget — a document just created may not appear in semantic search immediately. This is normal; let the user know if they seem confused by this.

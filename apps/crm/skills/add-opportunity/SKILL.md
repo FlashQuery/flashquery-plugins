@@ -82,7 +82,7 @@ If no close date was mentioned, leave it null.
 ### 4. Create the opportunity record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"crm"`
 - `table`: `"opportunities"`
 - `data`:
@@ -102,10 +102,10 @@ The opportunity narrative should be added to the relevant vault document(s) — 
 
 **If a company was linked:**
 
-Find the company's vault document. Call `search_records` with `plugin_id: "crm"`, `table: "businesses"`, `filters: { "name": "<company name>" }` to get the business record and its `fqc_id`.
+Find the company's vault document. Call `search_records` with `plugin_id: "crm"`, `table: "businesses"`, `filters: { "name": "<company name>" }` to get the business record and its `fqc_id` column, which stores the linked document's `fq_id`.
 
 Call `insert_in_doc` with:
-- `identifier`: the company's fqc_id
+- `identifier`: the company's linked document `fq_id`
 - `heading`: `"Opportunities"`
 - `position`: `"end_of_section"`
 - `content`: a brief narrative entry:
@@ -115,7 +115,7 @@ Call `insert_in_doc` with:
 
 **If a contact was linked (and the contact is the primary relationship):**
 
-Find the contact's vault document similarly (use the contact's fqc_id from step 1). Call `insert_in_doc` with `heading: "Opportunities"`, `position: "end_of_section"`, and a brief note referencing the deal and company.
+Find the contact's vault document similarly (use the contact record's `fqc_id` column, which stores the linked document's `fq_id`). Call `insert_in_doc` with `heading: "Opportunities"`, `position: "end_of_section"`, and a brief note referencing the deal and company.
 
 ### 6. Report the result
 

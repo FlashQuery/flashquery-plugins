@@ -22,7 +22,7 @@ What kind of change does the user want?
 
 Use when the user wants to add a section, log entry, or block of content to an existing document **without replacing what's already there**.
 
-1. Identify the document (use fqc_id, path, or filename — prefer fqc_id or full path to avoid ambiguity).
+1. Identify the document (use `fq_id`, path, or filename — prefer `fq_id` or full path to avoid ambiguity).
 2. If you're not sure of the document's structure, call `get_document` with `include: ["frontmatter", "headings"]` first to understand headings before appending.
 3. Call `insert_in_doc`:
    - `identifier` — the document
@@ -51,7 +51,7 @@ Use when the user wants to replace the document's body entirely, or change both 
 
 **Important:** `write_document(mode: "update")` re-embeds the document after body, title, tag, or frontmatter changes. For incremental tag changes, prefer `apply_tags`.
 
-**Untracked file recovery:** If the tool returns `"Document at {path} has no fqc_id in frontmatter"`, call `get_document` first (which auto-provisions the fqc_id), then retry.
+**Untracked file recovery:** If the tool reports that the document has no `fq_id`/FlashQuery frontmatter metadata, call `get_document` first (which auto-provisions the metadata), then retry.
 
 ---
 
@@ -66,7 +66,7 @@ Use for any incremental tag add/remove. This is the preferred tool for tag mutat
    - `add_tags` — tags to add (idempotent — adding an existing tag is safe)
    - `remove_tags` — tags to remove (silent no-op if not present)
 
-**Status tag conflicts:** You can only have one `#status/*` tag at a time. To change status, pass the old status in `remove_tags` and the new one in `add_tags` in the same call.
+**Status tag conventions:** FlashQuery no longer enforces one `#status/*` tag; it only rejects duplicate tags after normalization. If this workflow treats status as single-valued, pass the old status in `remove_tags` and the new one in `add_tags` in the same call.
 
 **Batch tagging:** To tag many documents at once, pass an array of identifiers to `identifiers`. All documents get the same add/remove applied. (For large batch operations based on a search, use fq-organizer instead.)
 

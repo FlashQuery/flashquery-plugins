@@ -75,7 +75,7 @@ Claude validates the plugin structure and lints all skill files:
 - Checks that no component directories are nested inside `.claude-plugin/`
 - Verifies each skill has a `SKILL.md` with proper frontmatter
 - Validates that `plugin.json` is well-formed JSON with required data
-- Lints skills for common issues (e.g., using `#status/` tags instead of frontmatter status properties)
+- Lints skills for common packaging issues (long fragile frontmatter descriptions, invalid command argument hints, and similar plugin-structure problems)
 
 Any errors are fixed before proceeding. Warnings can be acknowledged and skipped with your confirmation.
 

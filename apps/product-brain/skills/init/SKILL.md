@@ -155,21 +155,21 @@ For each template:
 a. Read the template file content from the references directory.
 
 b. Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
    - `title`: the template's display name (e.g., "Spark", "Research Note")
    - `path`: `{vault_root}/_plugin/templates/{template-filename}.md` (e.g., `product-brain/_plugin/templates/spark.md`)
    - `content`: the full template file content (including frontmatter)
 
-c. Extract the `fqc_id` from the response (appears as `fqc_id: {uuid}` in the response).
+c. Extract the document `fq_id` from the JSON response.
 
 d. Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"templates"`
    - `data`:
      ```json
      {
-       "fqc_id": "<uuid from step c>",
+       "fqc_id": "<fq_id from step c>",
        "name": "<template display name>",
        "document_type": "<spark|research_note|feature_spec|work_item|daily_log>",
        "is_base": true,
@@ -182,7 +182,7 @@ d. Call `write_record` with:
 Read the default tag vocabulary from `references/tags-default.md` in the skill directory.
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: `tags`
 - `path`: `{vault_root}/_plugin/tags.md` (e.g., `product-brain/_plugin/tags.md`)
 - `content`: the full tag vocabulary file content
@@ -194,7 +194,7 @@ This creates `_plugin/tags.md` — the single source of truth for available tags
 For **each project** declared during the setup conversation, perform the following steps in order:
 
 a. Create the project record — all documents reference their owning project. Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"projects"`
    - `data`:
@@ -211,19 +211,19 @@ a. Create the project record — all documents reference their owning project. C
 b. The research, specs, and work folders are created automatically by FlashQuery the first time a document is written into them — no explicit directory creation is needed. The inbox folder is created by the welcome spark in step c below. Folders appear in Obsidian once their first document is captured.
 
 c. Create a welcome spark in the inbox to give the user something to see immediately. Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
    - `title`: `Welcome to {project_name}`
    - `path`: `{vault_root}/{project_path}/inbox/welcome.md` (e.g., `product-brain/flashquery/inbox/welcome.md`)
    - `content`: a spark-format welcome note explaining that this is the project's inbox and how to start capturing. Use the spark template structure (frontmatter `type: spark`, body with the welcome message, empty Related and Sources sections).
 
-d. Register the welcome spark in the documents table. Extract the `fqc_id` from the response in step c, then call `write_record` with:
+d. Register the welcome spark in the documents table. Extract the document `fq_id` from the response in step c, then call `write_record` with:
    - `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
    - `data`:
      ```json
      {
-       "fqc_id": "<welcome doc fqc_id>",
+       "fqc_id": "<welcome doc fq_id>",
        "project_id": "<project record id from step a>",
        "document_type": "spark",
        "status": "active"

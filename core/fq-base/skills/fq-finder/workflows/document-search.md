@@ -69,7 +69,7 @@ After search, to read a specific document:
 get_document(identifiers: "clients/acme/proposal.md")
 ```
 
-To quickly check structure (frontmatter, headings, fqc_id):
+To quickly check structure (frontmatter, headings, fq_id):
 ```
 get_document(identifiers: "clients/acme/proposal.md", include: ["frontmatter", "headings"])
 ```
@@ -88,7 +88,7 @@ get_document(identifiers: ["path1.md", "path2.md", "path3.md"], include: ["front
 
 ### Token-efficient triage pattern
 
-- **Batch metadata scan** — pass `identifiers` as an array and `include: ["frontmatter", "headings"]` to get fqc_ids, tags, titles, and heading structure for many files in one call.
+- **Batch metadata scan** — pass `identifiers` as an array and `include: ["frontmatter", "headings"]` to get `fq_id` values, tags, titles, and heading structure for many files in one call.
 - **Single-document structure inspection** — pass a single string identifier and, if you only care about the top of the outline, set `max_depth: 2` or `max_depth: 3` to keep the response compact.
 
 ## When search returns unexpectedly empty

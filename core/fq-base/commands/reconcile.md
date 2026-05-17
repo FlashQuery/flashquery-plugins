@@ -17,7 +17,7 @@ Call `maintain_vault(action: "repair", dry_run: true)` to preview changes withou
 ## What reconcile does
 
 - Scans all database rows for this instance
-- For each row whose vault file is missing: scans the vault for a file with matching fqc_id in frontmatter
+- For each row whose vault file is missing: scans the vault for a file with matching `fq_id` in frontmatter
 - **Moved** rows: updates the database path to the new location
 - **Truly missing** rows: promotes status from `missing` to `archived` (permanent removal from search)
 

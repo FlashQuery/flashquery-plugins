@@ -8,7 +8,7 @@ This is a `call_model` workflow. It requires `llm:` configured in `flashquery.ym
 
 | Need | Pattern |
 |------|---------|
-| Pass one known document | `{{ref:path/to/doc.md}}` or `{{ref:<fqc_id>}}` |
+| Pass one known document | `{{ref:path/to/doc.md}}` or `{{ref:<fq_id>}}` |
 | Pass one known section | `{{ref:path/to/doc.md#Heading}}` |
 | Follow a frontmatter pointer | `{{ref:source.md->projections.summary}}` |
 | Fill a reusable template once | `{{ref:templates/review.md}}` plus `template_params["templates/review.md"]` |
@@ -16,7 +16,7 @@ This is a `call_model` workflow. It requires `llm:` configured in `flashquery.ym
 | Inject a variable-length bundle | `{{ref:@alias}}` plus `template_params.alias._items` |
 | Let the delegated model choose tools/templates during its own loop | Use a `purpose` with exposed tools/templates; do not try to express that as host references |
 
-Prefer `{{ref:<fqc_id>}}` when the reference will be reused or stored. Paths are readable, but IDs survive moves and renames. Do not use `{{id:...}}`; current reference hydration uses `{{ref:...}}` for paths, filenames, and UUIDs.
+Prefer `{{ref:<fq_id>}}` when the reference will be reused or stored. Paths are readable, but IDs survive moves and renames. Do not use `{{id:...}}`; current reference hydration uses `{{ref:...}}` for paths, filenames, and UUIDs.
 
 ## Direct references
 
@@ -48,7 +48,7 @@ Use pointer references when a source document's frontmatter names the target:
 {{ref:clients/acme/latest.md->versions.approved}}
 ```
 
-`#` and `->` are mutually exclusive. If either side can be ambiguous, use an `fqc_id`.
+`#` and `->` are mutually exclusive. If either side can be ambiguous, use an `fq_id`.
 
 ## Template references
 

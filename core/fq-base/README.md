@@ -70,15 +70,15 @@ Commands are slash commands you invoke explicitly.
 
 This plugin's skills call the following FlashQuery MCP tools. Your FlashQuery instance must be running and connected for this plugin to work:
 
-**Document tools:** `write_document`, `get_document`, `archive_document`, `remove_document`, `move_document`, `copy_document`, `search`, `maintain_vault`
+**Document tools:** `write_document`, `get_document`, `archive_document`, `remove_document`, `move_document`, `copy_document`, `insert_in_doc`, `replace_doc_section`, `insert_doc_link`, `apply_tags`, `list_vault`, `search`
 
-**Compound document tools:** `insert_in_doc`, `replace_doc_section`, `insert_doc_link`, `apply_tags`, `get_briefing`, `list_vault`, `search`
+**Memory tools:** `write_memory`, `get_memory`, `archive_memory`, `search`, `apply_tags`
 
-**Directory tools:** `manage_directory`
+**Plugin and record tools:** `register_plugin`, `get_plugin_info`, `unregister_plugin`, `write_record`, `get_record`, `search_records`, `archive_record`, `clear_pending_reviews`
 
-**Memory tools:** `write_memory`, `get_memory`, `search`, `archive_memory`
+**Compound and orchestration tools:** `get_briefing`, `call_macro`
 
-**Maintenance tools:** `maintain_vault`
+**Directory and maintenance tools:** `manage_directory`, `maintain_vault`
 
 **LLM tools:** `call_model`, `get_llm_usage` — requires an `llm:` section in `flashquery.yml`. These tools are optional; the skills that use them degrade gracefully when LLM is not configured.
 

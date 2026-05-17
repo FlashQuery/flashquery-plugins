@@ -69,7 +69,7 @@ If the user specified scope filters, call `search_records` with:
   ```
 - `limit`: 20 (reasonable default; increase if the user seems to want comprehensive results)
 
-This gives you a set of `fqc_id` values to focus the semantic search on. If no filters were specified, skip this step — let `search` search everything.
+This gives you a set of record `fqc_id` values, each storing the linked document's `fq_id`, to focus the semantic search on. If no filters were specified, skip this step — let `search` search everything.
 
 ### 4. Semantic search
 
@@ -77,7 +77,7 @@ Call `search` with:
 - `query`: the core search query extracted in step 1
 - omit `entity_types` to search both documents and memories, or set `entity_types: ["documents"]` / `["memories"]` when the user explicitly scopes the search
 
-If step 3 produced a filtered set, compare the `search` results against the filtered `fqc_id` list and prioritize matches that appear in both. Include high-relevance results from outside the filter set as supplementary findings — they might be unexpectedly useful.
+If step 3 produced a filtered set, compare the `search` result `fq_id` values against the filtered record `fqc_id` list and prioritize matches that appear in both. Include high-relevance results from outside the filter set as supplementary findings — they might be unexpectedly useful.
 
 ### 5. Present results
 

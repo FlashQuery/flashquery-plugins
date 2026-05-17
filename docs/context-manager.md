@@ -90,7 +90,7 @@ Once loaded, Claude uses the context document as active working context and proc
 
 **Reconstruction fidelity.** Context documents are designed for handoff quality. Early conversation exchanges are summarized to save space, but recent exchanges — where the important decisions and nuances live — are captured in detail. The resumption prompt at the end is designed to give a fresh Claude session everything it needs to continue the work.
 
-**UUID-based retrieval.** Context Manager uses FlashQuery's `fqc_id` (UUID) to retrieve documents, not file paths. This means you can reorganize your vault — move context files to different folders, rename them — without breaking the load workflow.
+**UUID-based retrieval.** Context Manager uses FlashQuery's `fq_id` (UUID) to retrieve documents, not file paths. This means you can reorganize your vault — move context files to different folders, rename them — without breaking the load workflow.
 
 **Tag discipline.** All saved contexts are tagged with `#ai-context`. Both save and load operations use this tag for filtering, which keeps context documents separate from your other vault content. If you want to find contexts manually, searching for `#ai-context` in FlashQuery or Obsidian will surface them all.
 

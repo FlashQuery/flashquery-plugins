@@ -57,7 +57,7 @@ When writing the skill body (the SKILL.md for the new skill), include:
 1. **Tool surface** — list which `mcp__flashquery__*` tools the skill uses and why
 2. **Tool call patterns** — show the exact parameter shapes for common operations so the model using the skill doesn't have to guess
 3. **Error handling** — include recovery patterns for common failures (write locks, missing files, tag conflicts)
-4. **Conventions** — always prefer `fqc_id` over paths for document references; parse `fqc_id` from `write_document` responses
+4. **Conventions** — always prefer document UUIDs over paths for stored references; parse `fq_id` from `write_document` responses. Plugin record schemas may store that UUID in a column named `fqc_id`.
 
 ### Step 4: Delegate to the skill-creator
 
@@ -67,13 +67,13 @@ Once you've drafted the skill with FlashQuery tools wired in, use the standard `
 
 These conventions should be embedded in any skill that uses FlashQuery tools:
 
-1. **Use `fqc_id` (UUID), not file paths** — paths change when users move files; UUIDs are stable. After `write_document`, parse the `fqc_id` from the response and store it for later reference.
+1. **Use document UUIDs, not file paths** — paths change when users move files; UUIDs are stable. After `write_document`, parse the `fq_id` from the response and store it for later reference. In plugin record tables, a field named `fqc_id` commonly stores that same document UUID as a foreign key.
 
 2. **Check `isError` on every tool response** — FlashQuery tools return structured responses. Always check for errors before proceeding.
 
 3. **Write lock recovery** — if a tool returns a write lock error, retry once after a brief pause. If it fails again, tell the user.
 
-4. **Tag conventions** — status tags use the `#status/*` prefix (e.g., `#status/draft`, `#status/published`). Only one status tag per document. Use `apply_tags` with `add_tags`/`remove_tags` for incremental changes. `apply_tags` also supports tagging memories via `memory_id` and batch-tagging multiple documents via array `identifiers`.
+4. **Tag conventions** — status tags may use the `#status/*` prefix (e.g., `#status/draft`, `#status/published`) when a skill chooses that vocabulary, but FlashQuery itself now only validates duplicate tags after normalization. Use `apply_tags` with `add_tags`/`remove_tags` for incremental changes. `apply_tags` also supports explicit `targets` for documents and memories; compatibility inputs `identifiers` and `memory_id` still work.
 
 5. **Semantic search latency** — documents just created may not appear in semantic search immediately because embedding is asynchronous. This is normal behavior.
 
@@ -161,7 +161,7 @@ Call `mcp__flashquery__write_document` with:
 - `path`: "clients/{client-slug}/intake.md"
 - `tags`: ["#type/intake", "#status/new"]
 
-Parse `fqc_id` from the response and use it for all subsequent references.
+Parse `fq_id` from the response and use it for all subsequent document references.
 
 ## Searching past intakes
 
@@ -188,7 +188,7 @@ If the skill manages structured records (not just documents and memories), it ne
 
 1. Define the schema as YAML — include it in the skill's `references/` or `assets/` directory
 2. The skill body should instruct the model to call `register_plugin` with either `schema_path` or `schema_yaml` on first use
-3. After registration, the skill uses `write_record`, `get_record`, `write_record`, `search_records`, and `archive_record` with the `plugin_id` and `table` name
+3. After registration, the skill uses `write_record`, `get_record`, and `search_records` with the `plugin_id` and `table` name; `archive_record` uses `targets` entries containing `plugin_id`, `table`, and `id`
 
 ### Basic schema (records only)
 
@@ -348,10 +348,10 @@ The reconciler routes new files to the right table based on which folder they la
 
 | Field | Values | Description |
 |-------|--------|-------------|
-| `id` | string | Unique type identifier (e.g., `crm-contacts`). Used in `fqc_type` frontmatter and the global type registry. |
-| `folder` | string | Vault-relative folder path to watch (e.g., `CRM/Contacts`). The folder implies intent — once a document is associated, frontmatter (`fqc_owner`/`fqc_type`) is the source of truth, not the folder. |
+| `id` | string | Unique type identifier (e.g., `crm-contacts`). Used in `fq_type` frontmatter and the global type registry. |
+| `folder` | string | Vault-relative folder path to watch (e.g., `CRM/Contacts`). The folder implies intent — once a document is associated, frontmatter (`fq_owner`/`fq_type`) is the source of truth, not the folder. |
 | `access` | `read-write` (default), `read-only` | Whether the plugin intends to modify documents in this folder. `read-only` causes a warning if the skill tries to write. Does not affect mechanical FQC operations (frontmatter writes during auto-track are always permitted). |
-| `on_added` | `ignore` (default), `auto-track` | What happens when a genuinely new file appears in the folder (no existing plugin row for its `fqc_id`). `auto-track`: FlashQuery creates the plugin table row, writes `fqc_owner`/`fqc_type` to the document's frontmatter, populates columns via `field_map`, and inserts a pending review row if `template` is declared. Requires `track_as`. `ignore`: file is visible in `fqc_documents` but the plugin doesn't track it. |
+| `on_added` | `ignore` (default), `auto-track` | What happens when a genuinely new file appears in the folder (no existing plugin row for its `fqc_id`). `auto-track`: FlashQuery creates the plugin table row, writes `fq_owner`/`fq_type` to the document's frontmatter, populates columns via `field_map`, and inserts a pending review row if `template` is declared. Requires `track_as`. `ignore`: file is visible in `fqc_documents` but the plugin doesn't track it. |
 | `track_as` | plugin table name | Which plugin table to insert into when auto-tracking. Must match a `tables` entry. Required when `on_added: auto-track`. |
 | `template` | filename string | A template hint for the plugin's skill. FlashQuery stores this as metadata and surfaces it in pending review rows (`review_type: 'template_available'`, `context.template` contains this filename). The skill (not FlashQuery) reads, applies, and merges the template with the document. The template file's location is entirely the skill's domain — put it in the skill's `references/` or `assets/` directory and reference it by path in the skill instructions. FlashQuery never reads the template file; it only stores the name as a routing hint. Optional. |
 | `field_map` | object (frontmatter key → column name) | Maps frontmatter fields to plugin table columns. Applied during auto-track (initial population), sync-data (on modification), and resurrection (re-sync after return). If a mapped field is absent from the document, the column is set to NULL. |
@@ -360,7 +360,7 @@ The reconciler routes new files to the right table based on which folder they la
 
 **Always-mechanical responses** (no policy field needed — FlashQuery always handles these):
 - `deleted`: document is `missing` or `archived` → plugin row is archived
-- `disassociated`: user removed `fqc_owner`/`fqc_type` from frontmatter → plugin row is archived
+- `disassociated`: user removed `fq_owner`/`fq_type` from frontmatter → plugin row is archived
 - `resurrected`: archived plugin row's document came back to `active` → row is un-archived, path updated, `field_map` re-applied (template never re-applied)
 
 ### Key schema rules
@@ -381,14 +381,14 @@ When a skill needs to watch folders and process new files (apply templates, clas
 1. The plugin schema declares `documents.types` entries with `on_added: auto-track`
 2. The user drops a file into a watched folder (outside any conversation)
 3. A **scanner run** (`maintain_vault`) picks up the file and registers it in `fqc_documents`
-4. A **record tool call** (any of: `search_records`, `write_record`, `get_record`, `write_record`, `archive_record`) triggers `reconcilePluginDocuments()` internally — this detects the new `fqc_documents` entry, auto-tracks it (creates the plugin row, writes `fqc_owner`/`fqc_type` frontmatter), and inserts a pending review row into `fqc_pending_plugin_review`
+4. A **record tool call** (any of: `search_records`, `write_record`, `get_record`, `write_record`, `archive_record`) triggers `reconcilePluginDocuments()` internally — this detects the new `fqc_documents` entry, auto-tracks it (creates the plugin row, writes `fq_owner`/`fq_type` frontmatter), and inserts a pending review row into `fqc_pending_plugin_review`
 5. The skill (running on `/loop` or scheduled cron) calls `clear_pending_reviews` to read the queue, processes each item (applies template, classifies, routes), then clears the processed IDs
 
 **Critical dependency:** `clear_pending_reviews` reads the `fqc_pending_plugin_review` table but does **not** itself trigger a vault scan or reconciliation. Pending items only appear in that table after steps 3 and 4 have both run. A scheduled skill that calls `clear_pending_reviews` cold (without first scanning and reconciling) will find nothing if no in-conversation record tool call happened between the file drop and the scheduled run. The fix: always call `maintain_vault` and then a record tool before querying pending reviews.
 
 This is the replacement for the old `on_document_discovered` push callback pattern. Data integrity (row creation, frontmatter writes, field sync) is always mechanical. The skill only handles the AI-requiring tasks: template application, content classification, and routing decisions.
 
-**Also: frontmatter-based discovery.** If a file is dropped into a *non-watched* folder but its YAML frontmatter includes `fqc_type: my-plugin-items`, FlashQuery's reconciler will still auto-track it — it looks up the type in the global type registry and applies the matching policy. The skill instructions can mention this as a fallback for users who want to pre-declare types in their documents.
+**Also: frontmatter-based discovery.** If a file is dropped into a *non-watched* folder but its YAML frontmatter includes `fq_type: my-plugin-items`, FlashQuery's reconciler will still auto-track it — it looks up the type in the global type registry and applies the matching policy. The skill instructions can mention this as a fallback for users who want to pre-declare types in their documents.
 
 **Typical skill structure for a pull-based processor:**
 

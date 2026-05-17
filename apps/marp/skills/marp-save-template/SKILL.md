@@ -43,12 +43,12 @@ Ask:
 - Ask for the vault path or name of the file
 - Call `mcp__flashquery__search({ query: "<name>", tags: ["#marp-template"], mode: "mixed" })` to find it
 - Confirm the match with the user
-- Use the returned `fqc_id` — do not create a new document
+- Use the returned document `fq_id` — do not create a new document
 
 **If from scratch:**
 - Ask: "Start from the minimal template (2 slides) or the full scaffold (title, agenda, sections, closing)?"
-- Call `mcp__flashquery__search({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's `fqc_id`
-- Read it with `mcp__flashquery__get_document({ identifiers: "<fqc_id>" })`
+- Call `mcp__flashquery__search({ query: "marp_template Default Minimal", tags: ["marp-template"] })` (or Scaffold) to get the bundled template's saved document UUID
+- Read it with `mcp__flashquery__get_document({ identifiers: "<fq_id>" })`
 - Use that content as the base for the new template
 - Save a new copy to the templates folder:
   ```
@@ -61,7 +61,7 @@ Ask:
     frontmatter: { marp: true }
   })
   ```
-- Parse the `fqc_id` from the response
+- Parse the `fq_id` from the JSON response
 
 ---
 
@@ -88,7 +88,7 @@ Call `mcp__flashquery__write_memory`:
 ```
 mcp__flashquery__write_memory({
   mode: "create",
-  content: "[marp_template] name: <name> — fqc_id: <uuid> — path: <vault path> — use_for: <use-for description>",
+  content: "[marp_template] name: <name> — fq_id: <uuid> — path: <vault path> — use_for: <use-for description>",
   tags: ["marp-config", "marp-template"]
 })
 ```
@@ -103,7 +103,7 @@ Tell the user:
 - The template name and vault path
 - That it will now be automatically offered when creating presentations about: `<use_for topics>`
 - That they can update the matching description by running this skill again and choosing the same template name (which will save a new memory version)
-- That they can open the template file in VS Code to customize the CSS, colors, and fonts — the memory tracks it by `fqc_id` so vault path changes won't break matching
+- That they can open the template file in VS Code to customize the CSS, colors, and fonts — the memory tracks it by `fq_id` so vault path changes won't break matching
 
 ---
 

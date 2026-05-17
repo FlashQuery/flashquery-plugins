@@ -6,7 +6,7 @@ Tags follow FQC Principle 2: they are bounded, user-meaningful categories — vi
 
 ## How tags are applied
 
-Tags live in two places simultaneously: document frontmatter (visible in Obsidian) and the record's `tags` field in Supabase (queryable). The `apply_tags` MCP tool syncs both atomically — always use it rather than updating one side manually.
+For contacts and businesses, tags live in two places: document frontmatter (visible in Obsidian) and the CRM record's `tags` field in Supabase (queryable). Use `apply_tags` for the document tag change, then update the CRM record's `tags` field with `write_record` so the query layer stays in sync. Opportunity records have no vault document, so update only their record `tags` field.
 
 When the user's language implies a tag change, apply it. When the user explicitly names a tag or stage, apply it. When in doubt, confirm with the user before applying.
 
@@ -16,7 +16,7 @@ When the user's language implies a tag change, apply it. When the user explicitl
 
 Applies to: **contacts, companies**
 
-These are managed by FQC and should always be present on every entity.
+These are CRM vocabulary tags and should be present on every active contact or company document. FlashQuery validates tag syntax and duplicates, but it does not enforce CRM-specific status rules.
 
 | Tag | When to apply | User might say |
 |-----|---------------|----------------|

@@ -66,7 +66,7 @@ Call `search_records` with:
 - `limit`: 1
 
 If a recent daily log is found, read its "Tomorrow" section via `get_document` with:
-- `identifiers`: the `fqc_id`
+- `identifiers`: the record's `fqc_id` value, which stores the linked document's `fq_id`
 - `sections`: `["Tomorrow"]`
 
 This is the "where you left off" anchor for the brief.

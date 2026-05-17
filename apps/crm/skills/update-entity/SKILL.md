@@ -59,7 +59,7 @@ Call `search_records` with:
 
 If multiple results match, ask the user to clarify. If no results, tell the user the entity wasn't found.
 
-From the result, note the **record ID** and **fqc_id** (if present — opportunity records don't have fqc_id).
+From the result, note the **record ID** and **fqc_id column** (if present — opportunity records don't have `fqc_id`; for contacts and businesses it stores the linked document's `fq_id`).
 
 **2. Determine the tag changes**
 
@@ -73,10 +73,10 @@ For tags that don't match the native taxonomy: apply the tag as requested, then 
 
 **3. Apply tags to the vault document (contacts and businesses only)**
 
-If the entity has a vault document (contacts and businesses have fqc_id; opportunities do not):
+If the entity has a vault document (contacts and businesses have a `fqc_id` record column storing the linked document's `fq_id`; opportunities do not):
 
 Call `apply_tags` with:
-- `identifiers`: array containing the entity's vault document path or fqc_id (e.g., `["CRM/Acme Corp.md"]`)
+- `identifiers`: array containing the entity's vault document path or linked document `fq_id` (e.g., `["CRM/Acme Corp.md"]`)
 - `add_tags`: array of tags to add (e.g., `["#stage/proposal"]`)
 - `remove_tags`: array of tags to remove (e.g., `["#stage/qualified"]`)
 
@@ -87,7 +87,7 @@ For opportunity records (which have no vault document), skip this step — the r
 **4. Update the record's tags field**
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"update"`
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"`, `"businesses"`, or `"opportunities"`
 - `id`: the record ID from step 1
@@ -113,14 +113,14 @@ Used when a contact changes their name or a company rebrands. This is less commo
 **2. Update the vault document title**
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
-- `identifier`: the entity's document path (or fqc_id)
+- `mode`: `"update"`
+- `identifier`: the entity's document path (or linked document `fq_id`)
 - `title`: `"<new name>"`
 
 **3. Update the record name**
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"update"`
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"` or `"businesses"`
 - `id`: the record ID

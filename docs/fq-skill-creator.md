@@ -57,7 +57,7 @@ The skill walks through a four-step process:
 - Organization (tagging, linking, archiving) → Compound tools (`apply_tags`, `insert_doc_link`, `archive_document`)
 - Watch vault folders for new files → Pull-based processing with `clear_pending_reviews`
 
-**Step 3: Write the skill.** Claude generates a SKILL.md file with the correct tool surface, parameter shapes, error handling (write lock recovery, missing file handling, tag conflict resolution), and FlashQuery conventions (using `fqc_id` over paths, checking `isError` on every response, handling semantic search latency).
+**Step 3: Write the skill.** Claude generates a SKILL.md file with the correct tool surface, parameter shapes, error handling (write lock recovery, missing file handling, duplicate tag validation), and FlashQuery conventions (using document UUIDs over paths, checking `isError` on every response, handling semantic search latency).
 
 **Step 4: Hand off.** The drafted skill is ready for testing and iteration, potentially using a skill-creator workflow.
 
@@ -89,7 +89,7 @@ The reference also includes a detailed guide to the `documents.types` schema for
 
 When building FlashQuery-powered skills, the reference enforces several conventions:
 
-**Use `fqc_id` (UUID), not file paths.** Paths change when users move files; UUIDs are stable. Parse `fqc_id` from `write_document` responses and store it for later reference.
+**Use document UUIDs, not file paths.** Paths change when users move files; UUIDs are stable. Parse `fq_id` from `write_document` responses and store it for later reference. Plugin record schemas may store that value in a column named `fqc_id`.
 
 **Check `isError` on every tool response.** FlashQuery tools return structured responses. Always check for errors before proceeding.
 
@@ -99,7 +99,7 @@ When building FlashQuery-powered skills, the reference enforces several conventi
 
 **Semantic search latency.** Documents just created may not appear in semantic search immediately because embedding is asynchronous. This is normal and expected.
 
-**Tag conventions.** Status tags use `#status/*` prefix. Only one status tag per document. Use `apply_tags` with `add_tags`/`remove_tags` for incremental changes.
+**Tag conventions.** Status tags can use a `#status/*` prefix as a skill-level vocabulary convention, but FlashQuery itself only rejects duplicate tags after normalization. Use `apply_tags` with `add_tags`/`remove_tags` for incremental changes.
 
 ---
 

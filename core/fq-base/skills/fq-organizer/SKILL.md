@@ -27,8 +27,9 @@ This skill handles bulk organization operations that require the AI to interpret
 - Archive sweeps (find candidates → confirm → archive)
 - Bulk memory cleanup (find old/outdated memories → confirm → archive)
 - Vault maintenance: moving/renaming documents, copying docs as starting points, removing empty directories, reconciling the database against the filesystem, and forcing file scans
+- Generic plugin administration when the user explicitly asks to register/unregister a plugin schema or clear pending review rows
 
-Tool surface in addition to `search`, `apply_tags`, `archive_document`, `search`, and `archive_memory`: `move_document`, `copy_document`, `manage_directory`, `maintain_vault`, `maintain_vault`.
+Tool surface in addition to `search`, `apply_tags`, `archive_document`, and `archive_memory`: `move_document`, `copy_document`, `remove_document`, `manage_directory`, `maintain_vault`, `register_plugin`, `get_plugin_info`, `unregister_plugin`, and `clear_pending_reviews`.
 
 ## What this skill does NOT own
 

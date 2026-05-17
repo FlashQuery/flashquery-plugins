@@ -93,23 +93,23 @@ Read the template via `get_document`.
 Compose the feature spec, filling in each section from the source material. The Sources section must include a `[[wikilink]]` to every research note and spark that contributed — this is the navigation layer of provenance, and it's not optional.
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: a clear feature name (e.g., `Document Versioning`, `Scanner Hidden File Support`)
 - `path`: `{vault_root}/{project_path}/specs/{feature-slug}.md`
 - `content`: the complete feature spec
 
 ### 7. Register the document
 
-Extract the `fqc_id` from the response, then:
+Extract the document `fq_id` from the response, then:
 
 a. Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
    - `plugin_id`: `"product-brain"`
    - `table`: `"documents"`
    - `data`:
      ```json
      {
-       "fqc_id": "<fqc_id>",
+       "fqc_id": "<fq_id>",
        "project_id": "<project id>",
        "document_type": "feature_spec",
        "status": "active",
@@ -134,8 +134,8 @@ For each contributing source document (research note or spark), write both layer
 - `data`:
   ```json
   {
-    "source_fqc_id": "<contributing document fqc_id>",
-    "derived_fqc_id": "<new feature spec fqc_id>",
+    "source_fqc_id": "<contributing document fq_id>",
+    "derived_fqc_id": "<new feature spec fq_id>",
     "created_at": "<current ISO timestamp>"
   }
   ```

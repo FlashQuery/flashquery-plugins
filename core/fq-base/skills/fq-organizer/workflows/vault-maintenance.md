@@ -2,7 +2,7 @@
 
 Use this workflow for operational hygiene on the vault: reconciling the database after bulk file moves outside the chat, emptying folders, duplicating docs as starting points, moving or renaming with identity preserved, and re-indexing when the scanner falls behind.
 
-These tools all preserve data in one way or another — moves keep the fqc_id, copies keep the source untouched, maintenance repair reconciles document state, and `manage_directory(action: "remove")` refuses to clear anything non-empty. The skill's job is to choose the right tool for the user's intent and relay the critical warnings the tools emit.
+These tools all preserve data in one way or another — moves keep the `fq_id`, copies keep the source untouched, maintenance repair reconciles document state, and `manage_directory(action: "remove")` refuses to clear anything non-empty. The skill's job is to choose the right tool for the user's intent and relay the critical warnings the tools emit.
 
 ## When to use
 
@@ -23,10 +23,10 @@ These tools all preserve data in one way or another — moves keep the fqc_id, c
 
 ## Tool overview
 
-| Tool | Purpose | Preserves fqc_id? |
+| Tool | Purpose | Preserves fq_id? |
 |------|---------|-------------------|
 | `move_document` | Rename/relocate a document | Yes — identity preserved |
-| `copy_document` | Duplicate a document as a starting point | No — copy gets a new fqc_id |
+| `copy_document` | Duplicate a document as a starting point | No — copy gets a new `fq_id` |
 | `manage_directory` | Create directories or safely remove **empty** directories | n/a |
 | `maintain_vault` | Sync external file changes, repair tracked document state, or inspect background jobs | Yes — maintenance preserves document identity where possible |
 
@@ -34,7 +34,7 @@ These tools all preserve data in one way or another — moves keep the fqc_id, c
 
 ## `move_document` — rename or relocate while preserving identity
 
-Use to rename a document, move it to a new directory, or both — without changing its `fqc_id`, history, or plugin associations. Intermediate directories are created automatically.
+Use to rename a document, move it to a new directory, or both — without changing its `fq_id`, history, or plugin associations. Intermediate directories are created automatically.
 
 ```
 move_document(
@@ -45,7 +45,7 @@ move_document(
 
 ### Key behaviors to relay to the user
 
-- **Identity is preserved.** fqc_id, creation date, tags, and all custom frontmatter carry over.
+- **Identity is preserved.** `fq_id`, creation date, tags, and all custom frontmatter carry over.
 - **Wikilinks in other documents are NOT auto-updated.** If another file has `[[Old Title]]` pointing at the moved document, that link will still resolve by title in most setups but may break if you renamed the title. The tool's response includes a reminder — surface it to the user so they know whether to do a find-and-replace sweep.
 - **Plugin-owned documents produce a warning.** If the moved document is owned by a plugin (e.g., a CRM contact doc), the plugin may be hard-wired to look at the old path. The response includes a warning — pass it along so the user can update the plugin's reference.
 - **Missing extension is filled in.** If `destination` doesn't include a file extension, the source's extension is used (`"projects/q2/brief"` → `"projects/q2/brief.md"`).
@@ -88,7 +88,7 @@ move_document(
 
 ## `copy_document` — duplicate as a starting point
 
-Use when the user wants to treat an existing document as a template — e.g., "copy the proposal template for the Acme deal." The source is not modified. The copy gets a **new fqc_id**, fresh `created` timestamp, and its own status lifecycle.
+Use when the user wants to treat an existing document as a template — e.g., "copy the proposal template for the Acme deal." The source is not modified. The copy gets a **new `fq_id`**, fresh `fq_created` timestamp, and its own lifecycle.
 
 ```
 copy_document(

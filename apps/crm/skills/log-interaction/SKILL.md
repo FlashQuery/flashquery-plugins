@@ -57,7 +57,7 @@ Note the **business record ID** if found.
 ### 3. Create the interaction record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"crm"`
 - `table`: `"interactions"`
 - `data`:
@@ -93,7 +93,7 @@ Call `insert_in_doc` with:
 ### 5. Update last_interaction on the contact record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"crm"`
 - `table`: `"contacts"`
 - `id`: the contact's record ID

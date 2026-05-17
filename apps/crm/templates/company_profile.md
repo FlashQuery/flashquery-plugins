@@ -1,11 +1,11 @@
 ---
-title: "{{name}}"
-fqc_id: "{{fqc_id}}"
-status: active
-tags:
+fq_title: "{{name}}"
+fq_id: "{{fq_id}}"
+fq_status: active
+fq_tags:
   - "#status/active"
-created: "{{created}}"
-updated: "{{updated}}"
+fq_created: "{{created}}"
+fq_updated: "{{updated}}"
 ---
 
 # Company Information

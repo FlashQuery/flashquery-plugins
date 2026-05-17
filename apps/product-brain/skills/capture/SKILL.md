@@ -96,10 +96,10 @@ Look up the template for the inferred document type. Call `search_records` with:
 - `table`: `"templates"`
 - `filters`: `{ "document_type": "<inferred type>" }`
 
-Read the template content via `get_document` using the `fqc_id` from the template record. Use the template structure, but populate it with the user's content — don't leave `{{placeholder}}` markers in the output. Generate a clear, descriptive title from the content.
+Read the template content via `get_document` using the template record's `fqc_id` column. That column stores the linked template document's `fq_id`. Use the template structure, but populate it with the user's content — don't leave `{{placeholder}}` markers in the output. Generate a clear, descriptive title from the content.
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: a clean, descriptive title generated from the content (e.g., "Scanner misses hidden files" not "Bug report about scanner")
 - `path`: `{vault_root}/{project_path}/{folder}/{title-slug}.md` based on the document type
 - `content`: the populated template content
@@ -108,14 +108,14 @@ This is the moment the thought is safe. Everything after this is enrichment.
 
 ### 4. Register in the documents table
 
-Extract the `fqc_id` from the `write_document` response, then call `write_record` with:
+Extract the document `fq_id` from the `write_document` response, then call `write_record` with:
 - `mode`: `"create"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"documents"`
 - `data`:
   ```json
   {
-    "fqc_id": "<fqc_id from write_document>",
+    "fqc_id": "<fq_id from write_document>",
     "project_id": "<project_id from step 1>",
     "document_type": "<inferred type>",
     "status": "active",
@@ -130,7 +130,7 @@ Read the tag vocabulary via `get_document` with the identifier for the tags file
 Select appropriate tags from the vocabulary based on the content. Choose tags that will help the user find this document later — typically one or two from the Classification group and optionally one from Workflow or Source.
 
 Call `apply_tags` with:
-- `identifiers`: the `fqc_id` of the new document
+- `identifiers`: the `fq_id` of the new document
 - `add_tags`: the selected tags
 
 If the content clearly calls for a tag that doesn't exist in the vocabulary, create it — but note this explicitly: "I've tagged this with `#api-design` — want me to add it to the tag vocabulary?" If the user confirms, append the new tag to `_plugin/tags.md` via `insert_in_doc`.
@@ -156,8 +156,8 @@ Review the results for genuinely relevant connections — not just keyword overl
 If the user confirms a connection, write the dual link:
 
 **Navigation layer** — call `insert_doc_link` with:
-- `identifiers`: the `fqc_id` of whichever document should contain the link
-- `target_identifier`: the title or fqc_id of the linked document
+- `identifiers`: the `fq_id` of whichever document should contain the link
+- `target_identifier`: the title or `fq_id` of the linked document
 - `property`: `"links"`, `"related"`, or another frontmatter property depending on the relationship
 
 Convention for Sources vs. Related:
@@ -171,8 +171,8 @@ Convention for Sources vs. Related:
 - `data`:
   ```json
   {
-    "source_fqc_id": "<the origin document>",
-    "derived_fqc_id": "<the document that was informed>"
+    "source_fqc_id": "<origin document fq_id>",
+    "derived_fqc_id": "<informed document fq_id>"
   }
   ```
 

@@ -108,7 +108,7 @@ loading the full body:
 
 ```
 mcp__flashquery__get_document({
-  identifiers: "<fqc_id>",
+  identifiers: "<fq_id>",
   include: ["frontmatter", "headings"]
 })
 ```
@@ -149,7 +149,7 @@ For documents whose type is `research_note`, read the Open Questions section:
 
 ```
 mcp__flashquery__get_document({
-  identifiers: "<fqc_id>",
+  identifiers: "<fq_id>",
   include: ["body"],
   sections: ["Open Questions"]
 })
@@ -190,7 +190,7 @@ do not overwrite the user's work.
 #### 5f. Update the database record
 
 For document-type pending items, find the existing `prodbrain_documents` record
-via `search_records` with `filters: { fqc_id: "<fqc_id>" }`, then call
+via `search_records` with `filters: { fqc_id: "<fq_id>" }`, then call
 `write_record` with the inferred data:
 
 ```

@@ -79,7 +79,7 @@ tables:
         description: "Content type: spark, research_note, feature_spec, work_item, or daily_log. Populated from frontmatter type field or inferred from folder during pending review."
       - name: status
         type: text
-        description: "Lifecycle status: active, resolved, archived, or shipped. Populated from frontmatter status field."
+        description: "Product Brain lifecycle status: active, resolved, archived, or shipped. This is plugin-owned status, separate from FlashQuery's managed fq_status field."
       - name: tags
         type: text
         description: "Comma-separated tags for filtering (e.g., '#priority,#user-feedback')"

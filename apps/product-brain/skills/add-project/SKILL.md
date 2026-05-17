@@ -58,7 +58,7 @@ If no configuration is found, the Product Brain hasn't been initialized yet. Tel
 #### 2. Create the project record
 
 Call `write_record` with:
-- `mode`: `"create"` for new rows or `"update"` when an `id` is supplied
+- `mode`: `"create"`
 - `plugin_id`: `"product-brain"`
 - `table`: `"projects"`
 - `data`:
@@ -79,7 +79,7 @@ Save the returned record ID — this is the `project_id` for all documents in th
 The research, specs, and work folders are created automatically by FlashQuery the first time a document is written into them. The inbox folder needs at least one document to exist, so create a welcome spark now.
 
 Call `write_document` with:
-- `mode`: `"create"` for new documents or `"update"` for existing documents
+- `mode`: `"create"`
 - `title`: `Welcome to {project_name}`
 - `path`: `{vault_root}/{project_path}/inbox/welcome.md`
 - `content`: a spark-format welcome note (frontmatter `type: spark`, brief body explaining this is the project inbox)

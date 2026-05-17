@@ -51,12 +51,12 @@ mcp__flashquery__search({
 
 Show results and ask the user to confirm which deck. If multiple results, list them with titles and paths.
 
-If the user provides an `fqc_id` or path directly, skip the search and use it.
+If the user provides an `fq_id`/UUID or path directly, skip the search and use it.
 
 Once confirmed, read the full deck content:
 ```
 mcp__flashquery__get_document({
-  identifiers: "<fqc_id>"
+  identifiers: "<fq_id>"
 })
 ```
 
@@ -101,7 +101,7 @@ After all edits, rejoin the array with `\n---\n`.
 ```
 mcp__flashquery__write_document({
   mode: "update",
-  identifier: "<fqc_id>",
+  identifier: "<fq_id>",
   content: "<full updated marp markdown>"
 })
 ```

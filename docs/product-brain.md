@@ -103,7 +103,7 @@ Lightweight status updates. Mark items as resolved, shipped, archived, or blocke
 
 **When Claude activates this skill:** "mark this as done," "this shipped," "block this on X," "resolve the Y issue," "archive this work item"
 
-**How it works:** Changes a document's lifecycle state by updating both the database record and the vault document's frontmatter. This skill is specifically for status changes — not for editing content (use capture or the base fq-writer for that).
+**How it works:** Changes a Product Brain lifecycle state by updating both the database record and the vault document's plugin-owned `status` frontmatter field. This skill is specifically for status changes — not for editing content (use capture or the base fq-writer for that).
 
 ---
 

@@ -175,16 +175,7 @@ if os.path.exists(skills_dir):
             content = f.read()
         fm_lines = get_frontmatter_lines(content)
 
-        # Check 1: #status tag misuse
-        if re.search(r'#status/\w+', content):
-            LINTS.append({
-                "file": f"skills/{skill_name}/SKILL.md",
-                "issue": "#status tag found",
-                "details": "Use the 'status' frontmatter property instead (e.g. status: draft)",
-                "severity": "warning",
-            })
-
-        # Check 2: Long description stored as plain scalar (not >- or | block)
+        # Check 1: Long description stored as plain scalar (not >- or | block)
         for i, line in enumerate(fm_lines):
             if line.startswith("description:"):
                 value = line[len("description:"):].strip()
@@ -213,7 +204,7 @@ if os.path.exists(commands_dir):
             content = f.read()
         fm_lines = get_frontmatter_lines(content)
 
-        # Check 3: argument-hint stored as YAML array (unquoted brackets)
+        # Check 2: argument-hint stored as YAML array (unquoted brackets)
         for line in fm_lines:
             if line.startswith("argument-hint:"):
                 value = line[len("argument-hint:"):].strip()
@@ -374,21 +365,6 @@ link and give the user a brief summary of what's inside and what changed.
 ## Linting Rules
 
 The plugin-creator automatically lints all skills during Phase 4 validation. These checks catch common issues early:
-
-### Rule: No #status tags in skill instructions
-
-**What it checks**: Skills should never use `#status/` tags in their instructions or guidance. The `status` property is a frontmatter field for markdown documents, not a tag.
-
-**Why**: Tags are user-facing organizational vocabulary. System properties like document status belong in frontmatter, not in tags. Mixing them confuses the distinction between user-managed tags and system properties.
-
-**What to fix**: If a skill mentions "#status/draft" or similar, replace it with guidance to use the frontmatter `status: draft` property instead. Example:
-
-❌ Bad: "Tag the document with #status/draft to mark it as incomplete"
-✓ Good: "Set the frontmatter status field to 'draft' to mark it as incomplete"
-
-**Trigger**: The linter searches all skill SKILL.md files for the pattern `#status/` anywhere in the content (excluding the skill metadata frontmatter itself — that's fine).
-
-More linting rules may be added in future versions. The linter is extensible and designed to grow as plugin patterns mature.
 
 ### Rule: `argument-hint` must be a plain string
 

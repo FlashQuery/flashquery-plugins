@@ -78,10 +78,10 @@ b. Append the spark's content to the research note via `insert_in_doc` — add i
 c. If the spark answers an open question, update the Open Questions section via `replace_doc_section` — move the answered question to Findings with the answer.
 
 d. Write provenance (dual-write):
-   - Call `write_record` on `provenance` with `mode: "create"`, `source_fqc_id` = spark, `derived_fqc_id` = research note
-   - Call `insert_doc_link` with `identifiers` = research note fqc_id, `target_identifier` = spark fqc_id, `property` = `"links"` to add the link to the research note's frontmatter
+   - Call `write_record` on `provenance` with `mode: "create"`, `source_fqc_id` = spark document `fq_id`, `derived_fqc_id` = research note document `fq_id`
+   - Call `insert_doc_link` with `identifiers` = research note document `fq_id`, `target_identifier` = spark document `fq_id`, `property` = `"links"` to add the link to the research note's frontmatter
 
-e. Archive the spark: call `archive_document` with `identifiers` = spark fqc_id to archive the vault file, then call `archive_record` with `targets: [{ plugin_id: "product-brain", table: "documents", id: spark_record_id }]` to archive the database record.
+e. Archive the spark: call `archive_document` with `identifiers` = spark document `fq_id` to archive the vault file, then call `archive_record` with `targets: [{ plugin_id: "product-brain", table: "documents", id: spark_record_id }]` to archive the database record.
 
 **Promote to a new document** — when the spark deserves its own document:
 

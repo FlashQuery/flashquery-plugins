@@ -56,7 +56,7 @@ insert_in_doc(
 
 ### Parameters
 
-- **`identifier`** (required) — path, filename, or fqc_id of the target document.
+- **`identifier`** (required) — path, filename, or `fq_id` of the target document.
 - **`position`** (required, enum) — one of: `"top"`, `"bottom"`, `"after_heading"`, `"before_heading"`, `"end_of_section"`. These values are validated at runtime; passing anything else returns an error listing the valid options.
 - **`heading`** (string) — the anchor heading. **Required when `position` is `"after_heading"`, `"before_heading"`, or `"end_of_section"`; omit for `"top"` and `"bottom"`**. Case-sensitive — match the heading as it appears in the document (`"Pricing"` ≠ `"pricing"`).
 - **`content`** (required) — markdown to insert. Don't include the heading line itself when inserting into an existing section; that's already there.
@@ -135,7 +135,7 @@ replace_doc_section(
 
 ### Parameters
 
-- **`identifier`** (required) — path, filename, or fqc_id.
+- **`identifier`** (required) — path, filename, or `fq_id`.
 - **`heading`** (required, case-sensitive) — the section to replace. If the heading appears multiple times in the document, the tool returns an error listing each occurrence with its line number; disambiguate with `occurrence`.
 - **`content`** (required) — the new body for the section. **Don't include the heading line itself** — it's preserved for you.
 - **`include_subheadings`** (boolean, optional, default `true`) — when `true`, replaces the section **including any nested child headings** (so the whole subtree is swapped). When `false`, preserves child headings in place and replaces only the prose directly under the heading, above the first nested heading.
@@ -184,7 +184,7 @@ replace_doc_section(
 - **Ambiguous heading (multiple occurrences)** — `replace_doc_section` returns an error with each occurrence's line number. Use `occurrence` to disambiguate.
 - **Wrong `position` enum value** — the tool validates `position` and returns an error listing the valid set (`top`, `bottom`, `after_heading`, `before_heading`, `end_of_section`). Re-check the spelling.
 - **Missing `heading` when required** — `after_heading`, `before_heading`, and `end_of_section` all need `heading`; without it the tool errors.
-- **Untracked file (no fqc_id)** — call `get_document` first to auto-provision the fqc_id, then retry the section edit.
+- **Untracked file (no `fq_id`)** — call `get_document` first to auto-provision FlashQuery metadata, then retry the section edit.
 
 ## Handoff to document-modification
 

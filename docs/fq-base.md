@@ -45,7 +45,7 @@ The writing skill handles everything that creates or changes content in your vau
 
 **What it handles:**
 
-**Document creation** — Creating new Markdown documents in the vault with frontmatter, tags, and content. Claude generates the document, saves it via FlashQuery, and returns the document's `fqc_id` (a UUID that stays stable even if you rename or move the file).
+**Document creation** — Creating new Markdown documents in the vault with frontmatter, tags, and content. Claude generates the document, saves it via FlashQuery, and returns the document's `fq_id` (a UUID that stays stable even if you rename or move the file).
 
 **Document modification** — Appending content to an existing document, rewriting its body, or updating its frontmatter and tags. Claude picks the right editing approach based on your request: a full body rewrite when you want to overhaul the document, an append when you're adding to the end, or a targeted section edit when you want to change one part without touching the rest.
 
